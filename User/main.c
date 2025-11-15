@@ -60,6 +60,7 @@
 
 // 菜单定义
 MenuItem menu_main[] = {
+	// 显示名称    菜单标识符   初始化函数
     {"Main menu", MENU_MAIN, NULL},
     {"Pwm spare", MENU_PWM, NULL},
     {"Servo Control", MENU_SERVO, NULL},
