@@ -1,0 +1,25 @@
+/* menu.h */
+#ifndef __MENU_H
+#define __MENU_H
+
+typedef enum {
+    MENU_MAIN,
+    MENU_SETTINGS,
+    MENU_SERVO,  // 确保包含所有状态
+    // 其他状态...
+} MenuState;
+
+typedef enum {
+    EVT_NONE,
+    EVT_UP,
+    EVT_DOWN,
+    EVT_OK,
+    EVT_BACK
+} MenuEvent;
+
+// 声明公共函数
+void handle_event(MenuEvent evt);
+MenuEvent get_next_event(void);
+void update_display(void);
+
+#endif
