@@ -1,14 +1,13 @@
+/**
+ * @file    vdraw.h
+ * @brief   PWMæ³¢å½¢åˆ†æå™¨æ¨¡å—æ¥å£ (TIM2 CH1/CH2, PA0)
+ */
+
 #ifndef __VDRAW_H
 #define __VDRAW_H
 
-#include "stm32f1xx_hal.h"
+#include "./OVER/module.h"
 
-/* Íâ²¿ÒÀÀµÉùÃ÷ */
-extern TIM_HandleTypeDef htim2;
-
-/**
-  * @brief  Æô¶¯PWM·ÖÎöÒÇ¹¦ÄÜ
-  */
-void PWM_Analyzer_Run(void);
+extern const ModuleInterface vdraw_module;
 
 #endif /* __VDRAW_H */

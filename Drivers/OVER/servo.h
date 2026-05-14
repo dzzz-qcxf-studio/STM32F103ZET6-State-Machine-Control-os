@@ -1,13 +1,13 @@
+/**
+ * @file    servo.h
+ * @brief   åŒèˆµæœºæ§åˆ¶æ¨¡å—æ¥å£ (SG90, TIM3 CH1/CH2, PA6/PA7)
+ */
+
 #ifndef __SERVO_H
 #define __SERVO_H
 
-#include "stm32f1xx_hal.h"
+#include "./OVER/module.h"
 
-// ³õÊ¼»¯PWM
-void Servo_PWM_Init(void);
-// ÉèÖÃ¶æ»ú½Ç¶È
-void Servo1_SetAngle(uint8_t angle);
-void Servo2_SetAngle(uint8_t angle);
-// ¾ßÌå¹¦ÄÜ½çÃæ
-void Servo_control(void);
-#endif    
+extern const ModuleInterface servo_module;
+
+#endif /* __SERVO_H */

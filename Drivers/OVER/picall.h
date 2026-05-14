@@ -1,7 +1,15 @@
+/**
+ * @file    picall.h
+ * @brief   SD卡图片浏览器模块接口
+ *
+ * 全屏阻塞式交互，保持原有行为。
+ */
+
 #ifndef __PICALL_H
 #define __PICALL_H
 
-static uint16_t pic_get_tnum(char *path);
-void picall(void);
+#include "./OVER/module.h"
 
-#endif
+extern const ModuleInterface picall_module;
+
+#endif /* __PICALL_H */

@@ -1,5 +1,10 @@
 ..\..\output\picall.o: ..\..\Drivers\OVER\picall.c
-..\..\output\picall.o: ..\..\Drivers\./SYSTEM/sys/sys.h
+..\..\output\picall.o: ..\..\Drivers\./OVER/picall.h
+..\..\output\picall.o: ..\..\Drivers\./OVER/module.h
+..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
+..\..\output\picall.o: ..\..\User\stm32f1xx_hal_conf.h
+..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
+..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_def.h
 ..\..\output\picall.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h
 ..\..\output\picall.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f103xe.h
 ..\..\output\picall.o: ..\..\Drivers\CMSIS\Include\core_cm3.h
@@ -9,10 +14,6 @@
 ..\..\output\picall.o: ..\..\Drivers\CMSIS\Include\cmsis_armcc.h
 ..\..\output\picall.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\system_stm32f1xx.h
 ..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
-..\..\output\picall.o: ..\..\User\stm32f1xx_hal_conf.h
-..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
-..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_def.h
-..\..\output\picall.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h
 ..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy/stm32_hal_legacy.h
 ..\..\output\picall.o: D:\keil5\ARM\ARMCC\Bin\..\include\stddef.h
 ..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc_ex.h
@@ -58,11 +59,10 @@
 ..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h
 ..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\picall.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
+..\..\output\picall.o: ..\..\Drivers\./SYSTEM/sys/sys.h
 ..\..\output\picall.o: ..\..\Drivers\./SYSTEM/usart/usart.h
 ..\..\output\picall.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
 ..\..\output\picall.o: ..\..\Drivers\./SYSTEM/delay/delay.h
-..\..\output\picall.o: ..\..\Middlewares\./USMART/usmart.h
-..\..\output\picall.o: ..\..\Middlewares\./USMART/usmart_port.h
 ..\..\output\picall.o: ..\..\Middlewares\./MALLOC/malloc.h
 ..\..\output\picall.o: ..\..\Middlewares\./FATFS/exfuns/exfuns.h
 ..\..\output\picall.o: ..\..\Middlewares\./FATFS/source/ff.h
@@ -82,4 +82,3 @@
 ..\..\output\picall.o: ..\..\Middlewares\./PICTURE/tjpgd.h
 ..\..\output\picall.o: ..\..\Middlewares\./PICTURE/tjpgdcnf.h
 ..\..\output\picall.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h
-..\..\output\picall.o: D:\keil5\ARM\ARMCC\Bin\..\include\math.h

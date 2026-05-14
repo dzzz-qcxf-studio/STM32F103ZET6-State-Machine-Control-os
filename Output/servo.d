@@ -1,5 +1,6 @@
 ..\..\output\servo.o: ..\..\Drivers\OVER\servo.c
 ..\..\output\servo.o: ..\..\Drivers\./OVER/servo.h
+..\..\output\servo.o: ..\..\Drivers\./OVER/module.h
 ..\..\output\servo.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
 ..\..\output\servo.o: ..\..\User\stm32f1xx_hal_conf.h
 ..\..\output\servo.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
@@ -58,10 +59,10 @@
 ..\..\output\servo.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h
 ..\..\output\servo.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\servo.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
+..\..\output\servo.o: ..\..\Drivers\./OVER/resource.h
 ..\..\output\servo.o: ..\..\Drivers\./OVER/menu.h
 ..\..\output\servo.o: ..\..\Drivers\./BSP/LCD/lcd.h
 ..\..\output\servo.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\servo.o: ..\..\Drivers\./SYSTEM/sys/sys.h
-..\..\output\servo.o: ..\..\Drivers\./BSP/TOUCH/touch.h
-..\..\output\servo.o: ..\..\Drivers\./BSP/TOUCH/gt9xxx.h
-..\..\output\servo.o: ..\..\Drivers\./BSP/TOUCH/ft5206.h
+..\..\output\servo.o: ..\..\Drivers\./BSP/LCD/lcd_widgets.h
+..\..\output\servo.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h

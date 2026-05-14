@@ -62,5 +62,6 @@
 ..\..\output\joystick.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\joystick.o: ..\..\Drivers\./SYSTEM/sys/sys.h
 ..\..\output\joystick.o: ..\..\Drivers\./OVER/menu.h
+..\..\output\joystick.o: ..\..\Drivers\./OVER/module.h
 ..\..\output\joystick.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
 ..\..\output\joystick.o: D:\keil5\ARM\ARMCC\Bin\..\include\math.h

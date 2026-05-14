@@ -542,6 +542,11 @@
               <FilePath>..\..\Drivers\BSP\LCD\lcd.c</FilePath>
             </File>
             <File>
+              <FileName>lcd_widgets.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\BSP\LCD\lcd_widgets.c</FilePath>
+            </File>
+            <File>
               <FileName>myiic.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Drivers\BSP\IIC\myiic.c</FilePath>
@@ -629,7 +634,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>OVER</GroupName>
+          <GroupName>App</GroupName>
           <Files>
             <File>
               <FileName>servo.c</FileName>
@@ -660,6 +665,16 @@
               <FileName>picall.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Drivers\OVER\picall.c</FilePath>
+            </File>
+            <File>
+              <FileName>oscilloscope.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\OVER\oscilloscope.c</FilePath>
+            </File>
+            <File>
+              <FileName>bus_servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\OVER\bus_servo.c</FilePath>
             </File>
             <File>
               <FileName>wireless.c</FileName>
@@ -700,6 +715,31 @@
               <FileName>mpu_pid.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\Drivers\OVER\mpu_pid.h</FilePath>
+            </File>
+            <File>
+              <FileName>usart_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\OVER\usart_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>usart_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Drivers\OVER\usart_ui.h</FilePath>
+            </File>
+            <File>
+              <FileName>joystick_module.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\OVER\joystick_module.c</FilePath>
+            </File>
+            <File>
+              <FileName>module.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\OVER\module.c</FilePath>
+            </File>
+            <File>
+              <FileName>resource.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\OVER\resource.c</FilePath>
             </File>
           </Files>
         </Group>

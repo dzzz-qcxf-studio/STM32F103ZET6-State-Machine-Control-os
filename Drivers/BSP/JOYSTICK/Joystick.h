@@ -15,15 +15,8 @@ typedef struct {
     uint8_t k2;    // 右按键
 } JoystickState;
 
-// 函数声明
+/* BSP层接口 */
 void Joystick_Init(void);
 void Joystick_Read(JoystickState *state);
-void Joystick_Update(void);
-void Joystick_Display(void);
-void Update_Joystick_Graph(JoystickState *state);
-void Draw_Joystick_Layout(void);
-void Redraw_Joystick_Elements(int dot_x, int dot_y, int center_x, int center_y);
-void Draw_Title_And_Info(void);
-void Display_Joystick_Values(JoystickState *state);
 
 #endif

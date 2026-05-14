@@ -1,5 +1,10 @@
 ..\..\output\relay.o: ..\..\Drivers\OVER\relay.c
 ..\..\output\relay.o: ..\..\Drivers\./OVER/relay.h
+..\..\output\relay.o: ..\..\Drivers\./OVER/module.h
+..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
+..\..\output\relay.o: ..\..\User\stm32f1xx_hal_conf.h
+..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
+..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_def.h
 ..\..\output\relay.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h
 ..\..\output\relay.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f103xe.h
 ..\..\output\relay.o: ..\..\Drivers\CMSIS\Include\core_cm3.h
@@ -9,10 +14,6 @@
 ..\..\output\relay.o: ..\..\Drivers\CMSIS\Include\cmsis_armcc.h
 ..\..\output\relay.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\system_stm32f1xx.h
 ..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
-..\..\output\relay.o: ..\..\User\stm32f1xx_hal_conf.h
-..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
-..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_def.h
-..\..\output\relay.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h
 ..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy/stm32_hal_legacy.h
 ..\..\output\relay.o: D:\keil5\ARM\ARMCC\Bin\..\include\stddef.h
 ..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc_ex.h
@@ -58,11 +59,9 @@
 ..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h
 ..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\relay.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
+..\..\output\relay.o: ..\..\Drivers\./OVER/resource.h
 ..\..\output\relay.o: ..\..\Drivers\./OVER/menu.h
 ..\..\output\relay.o: ..\..\Drivers\./BSP/LCD/lcd.h
 ..\..\output\relay.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\relay.o: ..\..\Drivers\./SYSTEM/sys/sys.h
-..\..\output\relay.o: ..\..\Drivers\./BSP/TOUCH/touch.h
-..\..\output\relay.o: ..\..\Drivers\./BSP/TOUCH/gt9xxx.h
-..\..\output\relay.o: ..\..\Drivers\./BSP/TOUCH/ft5206.h
-..\..\output\relay.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\..\output\relay.o: ..\..\Drivers\./BSP/LCD/lcd_widgets.h

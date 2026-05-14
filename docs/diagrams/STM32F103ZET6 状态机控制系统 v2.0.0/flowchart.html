@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STM32F103ZET6 状态机控制系统 v2.0.0 - 软件流程图</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --hue: 260;
+            --bg: oklch(0.13 0.015 var(--hue));
+            --surface: oklch(0.17 0.02 var(--hue));
+            --surface-raised: oklch(0.21 0.02 var(--hue));
+            --border: oklch(0.3 0.02 var(--hue));
+            --text: oklch(0.93 0.01 var(--hue));
+            --text-muted: oklch(0.55 0.02 var(--hue));
+            --accent: oklch(0.65 0.22 260);
+            --accent-dim: oklch(0.45 0.15 260);
+            --node-init: oklch(0.75 0.16 260);
+            --node-loop: oklch(0.7 0.18 200);
+            --node-decision: oklch(0.72 0.15 30);
+            --node-action: oklch(0.68 0.2 260);
+            --radius: 10px;
+            --speed: 0.2s;
+        }
+
+        [data-theme="light"] {
+            --bg: oklch(0.97 0.005 var(--hue));
+            --surface: oklch(0.95 0.005 var(--hue));
+            --surface-raised: oklch(0.92 0.008 var(--hue));
+            --border: oklch(0.85 0.01 var(--hue));
+            --text: oklch(0.18 0.015 var(--hue));
+            --text-muted: oklch(0.5 0.015 var(--hue));
+            --accent: oklch(0.5 0.22 260);
+            --accent-dim: oklch(0.65 0.15 260);
+            --node-init: oklch(0.45 0.18 260);
+            --node-loop: oklch(0.42 0.16 200);
+            --node-decision: oklch(0.45 0.18 30);
+            --node-action: oklch(0.42 0.2 260);
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme="dark"]) {
+                --bg: oklch(0.97 0.005 var(--hue));
+                --surface: oklch(0.95 0.005 var(--hue));
+                --surface-raised: oklch(0.92 0.008 var(--hue));
+                --border: oklch(0.85 0.01 var(--hue));
+                --text: oklch(0.18 0.015 var(--hue));
+                --text-muted: oklch(0.5 0.015 var(--hue));
+                --accent: oklch(0.5 0.22 260);
+                --accent-dim: oklch(0.65 0.15 260);
+                --node-init: oklch(0.45 0.18 260);
+                --node-loop: oklch(0.42 0.16 200);
+                --node-decision: oklch(0.45 0.18 30);
+                --node-action: oklch(0.42 0.2 260);
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Consolas, 'Courier New', 'Noto Sans Mono CJK SC', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            transition: background var(--speed) ease, color var(--speed) ease;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: clamp(18px, 3vw, 26px);
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            background: var(--accent-dim);
+            color: var(--text);
+            font-weight: 500;
+            letter-spacing: 0.03em;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            max-width: 960px;
+            width: 100%;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: background var(--speed) ease, border-color var(--speed) ease;
+        }
+
+        .chart-card h2 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            letter-spacing: 0.03em;
+        }
+
+        .mermaid-wrap {
+            padding: clamp(16px, 3vw, 32px);
+            overflow-x: auto;
+        }
+
+        .mermaid { background: transparent; }
+
+        /* Mermaid node overrides */
+        .mermaid .node rect,
+        .mermaid .node polygon,
+        .mermaid .node circle {
+            stroke: var(--accent) !important;
+            stroke-width: 1.5px !important;
+        }
+
+        .mermaid .edgePath .path {
+            stroke: var(--accent-dim) !important;
+            stroke-width: 1.5px !important;
+        }
+
+        .mermaid .edgeLabel {
+            background: var(--surface-raised) !important;
+            color: var(--text) !important;
+            font-size: 12px !important;
+            padding: 2px 8px !important;
+            border-radius: 4px !important;
+        }
+
+        .mermaid .cluster rect {
+            fill: var(--surface-raised) !important;
+            stroke: var(--border) !important;
+            rx: 8 !important;
+            ry: 8 !important;
+        }
+
+        .mermaid .cluster .nodeLabel {
+            color: var(--text-muted) !important;
+            font-size: 12px !important;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all var(--speed) ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--surface-raised);
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题"></button>
+    <div class="header">
+        <h1>STM32F103ZET6 状态机控制系统 v2.0.0 - 软件流程图</h1>
+        <span class="badge">auto-generated</span>
+    </div>
+    <p class="subtitle">基于 requirements.json 自动生成</p>
+    <div class="charts">
+        <div class="chart-card">
+            <h2>初始化流程</h2>
+            <div class="mermaid-wrap">
+                <pre class="mermaid">
+graph TD
+    Start([上电启动]) --> Init["系统初始化<br/>时钟、GPIO"]
+    Init --> InputInit["输入模块初始化"]
+    style Start fill:#4ecca3,stroke:#333,stroke-width:2px
+    style Init fill:#f9d71c,stroke:#333,stroke-width:2px
+                </pre>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h2>主循环逻辑</h2>
+            <div class="mermaid-wrap">
+                <pre class="mermaid">
+graph TD
+    Loop(["主循环"])
+    Loop --> ReadInput["读取输入状态"]
+    ReadInput --> Check{"检测到变化?"}
+    Check -->|是| Process["处理输入"]
+    Process --> Output["控制输出"]
+    Output --> Loop
+    Check -->|否| Loop
+                </pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        function toggleTheme() {
+            const root = document.documentElement;
+            const curr = root.getAttribute('data-theme');
+            const next = curr === 'light' ? 'dark' : 'light';
+            root.setAttribute('data-theme', next);
+            localStorage.setItem('flowchart-theme', next);
+            document.querySelector('.theme-toggle').textContent = next === 'light' ? '☾' : '☀';
+        }
+        (function() {
+            const saved = localStorage.getItem('flowchart-theme');
+            if (saved) document.documentElement.setAttribute('data-theme', saved);
+            const isDark = (document.documentElement.getAttribute('data-theme') || '') === 'dark'
+                || (!document.documentElement.getAttribute('data-theme')
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.querySelector('.theme-toggle').textContent = isDark ? '☀' : '☾';
+        })();
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: 'oklch(0.25 0.08 260)',
+                primaryTextColor: 'oklch(0.93 0.01 260)',
+                primaryBorderColor: 'oklch(0.5 0.18 260)',
+                lineColor: 'oklch(0.55 0.18 260)',
+                secondaryColor: 'oklch(0.2 0.02 260)',
+                tertiaryColor: 'oklch(0.17 0.02 260)',
+                edgeLabelBackground: 'oklch(0.21 0.02 260)',
+                fontFamily: 'Consolas, Courier New, monospace',
+                fontSize: '13px',
+            },
+            flowchart: { curve: 'basis', padding: 20, htmlLabels: true },
+        });
+    </script>
+</body>
+</html>

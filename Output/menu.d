@@ -58,11 +58,13 @@
 ..\..\output\menu.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h
 ..\..\output\menu.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\menu.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
+..\..\output\menu.o: ..\..\Drivers\./OVER/module.h
 ..\..\output\menu.o: ..\..\Drivers\./BSP/LCD/lcd.h
 ..\..\output\menu.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\menu.o: ..\..\Drivers\./SYSTEM/sys/sys.h
+..\..\output\menu.o: ..\..\Drivers\./BSP/LCD/lcd_widgets.h
 ..\..\output\menu.o: ..\..\Drivers\./BSP/TOUCH/touch.h
 ..\..\output\menu.o: ..\..\Drivers\./BSP/TOUCH/gt9xxx.h
 ..\..\output\menu.o: ..\..\Drivers\./BSP/TOUCH/ft5206.h
-..\..\output\menu.o: ..\..\Drivers\./BSP/JOYSTICK/Joystick.h
 ..\..\output\menu.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\..\output\menu.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h

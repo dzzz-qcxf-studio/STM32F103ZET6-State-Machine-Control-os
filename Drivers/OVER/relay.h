@@ -1,14 +1,13 @@
+/**
+ * @file    relay.h
+ * @brief   ç»§ç”µå™¨æ§åˆ¶æ¨¡å—æ¥å£ (PA3)
+ */
+
 #ifndef __RELAY_H
 #define __RELAY_H
 
-#include "stm32f1xx.h"
-#include "stm32f1xx_hal.h"
+#include "./OVER/module.h"
 
-/* º¯ÊıÉùÃ÷ */
-void MX_GPIO_Init(void);
-void Relay_Control(FunctionalState state);
-void Relay_Init(void);
-void Relay_Control_Interface(void);
+extern const ModuleInterface relay_module;
 
 #endif /* __RELAY_H */
-

@@ -1,0 +1,142 @@
+{
+  "projectName": "STM32F103ZET6 状态机控制系统 v2.0.0",
+  "target_mcu": "STM32F103ZET6",
+  "platform": "正点原子精英开发板V2 + 4.6寸触摸屏",
+  "build_system": "Keil MDK-ARM",
+  "description": "多级菜单状态机控制系统，集成多种硬件测试和通信功能模块，用于日常开发中的硬件测试和单独收发信息",
+  "inputs": [
+    {
+      "module": "KEY",
+      "driver": "Drivers/BSP/KEY/key.c",
+      "description": "物理按键输入 (WKUP=PA0, KEY0=PE4)"
+    },
+    {
+      "module": "TOUCH",
+      "driver": "Drivers/BSP/TOUCH/touch.c",
+      "description": "触摸屏输入 (电阻/电容自动检测)"
+    },
+    {
+      "module": "JOYSTICK",
+      "driver": "Drivers/BSP/JOYSTICK/Joystick.c",
+      "description": "双摇杆ADC输入 (PC0-PC3轴, PC4-PC5按键)"
+    },
+    {
+      "module": "MPU6050",
+      "driver": "Drivers/OVER/mpu6050.c",
+      "description": "6轴IMU传感器 (软件I2C PB6/PB7)"
+    },
+    {
+      "module": "NRF24L01",
+      "driver": "Drivers/BSP/NRF24L01/nrf24l01.c",
+      "description": "2.4G无线模块 (SPI1 PA5/PA6/PA7, CE=PB0, CSN=PB15, IRQ=PC13)"
+    }
+  ],
+  "outputs": [
+    {
+      "module": "LCD",
+      "driver": "Drivers/BSP/LCD/lcd.c",
+      "description": "FSMC TFT LCD显示 (NE4, A10, 16-bit)"
+    },
+    {
+      "module": "LED",
+      "driver": "Drivers/BSP/LED/led.c",
+      "description": "LED指示灯 (LED0=PB5, LED1=PE5)"
+    },
+    {
+      "module": "SERVO",
+      "driver": "Drivers/OVER/servo.c",
+      "description": "双舵机PWM控制 (TIM3 CH1=PA6, CH2=PA7)"
+    },
+    {
+      "module": "RELAY",
+      "driver": "Drivers/OVER/relay.c",
+      "description": "继电器控制 (PA3)"
+    },
+    {
+      "module": "L9110_MOTOR",
+      "driver": "Drivers/OVER/mpu_pid.c",
+      "description": "L9110电机驱动 (TIM3=PA6, TIM2=PA0)"
+    }
+  ],
+  "communication": [
+    {
+      "module": "USART1",
+      "driver": "Drivers/SYSTEM/usart/usart.c",
+      "description": "调试串口 (PA9/PA10, 115200)"
+    },
+    {
+      "module": "USART3",
+      "driver": "Drivers/OVER/hand_control.c",
+      "description": "坐标发送串口 (PB10/PB11, 115200)"
+    }
+  ],
+  "features": [
+    {
+      "name": "MenuStateMachine",
+      "file": "Drivers/OVER/menu.c",
+      "description": "16状态菜单状态机 + 事件队列 + 触摸键盘"
+    },
+    {
+      "name": "PWM_Analyzer",
+      "file": "Drivers/OVER/vdraw.c",
+      "description": "PWM波形分析器 (TIM2输入捕获 PA0)"
+    },
+    {
+      "name": "Wireless_Remote",
+      "file": "Drivers/OVER/wireless.c",
+      "description": "NRF24L01遥控器 (多点触控油门/转向)"
+    },
+    {
+      "name": "MPU_PID",
+      "file": "Drivers/OVER/mpu_pid.c",
+      "description": "MPU6050+PID平衡控制+波形显示"
+    },
+    {
+      "name": "Hand_Control",
+      "file": "Drivers/OVER/hand_control.c",
+      "description": "坐标输入发送 (USART3二进制协议)"
+    },
+    {
+      "name": "USART_UI",
+      "file": "Drivers/OVER/usart_ui.c",
+      "description": "串口通信终端界面"
+    },
+    {
+      "name": "Picture_Viewer",
+      "file": "Drivers/OVER/picall.c",
+      "description": "SD卡图片浏览器 (BMP/JPG/GIF)"
+    }
+  ],
+  "pin_conflicts": [
+    {
+      "pin": "PA0",
+      "users": ["WKUP按键", "TIM2 CH1 PWM捕获/L9110电机B"],
+      "note": "不同模块互斥使用"
+    },
+    {
+      "pin": "PA6",
+      "users": ["TIM3 CH1 舵机", "SPI1 MISO NRF24L01"],
+      "note": "不同模块互斥使用"
+    },
+    {
+      "pin": "PA7",
+      "users": ["TIM3 CH2 舵机", "SPI1 MOSI NRF24L01"],
+      "note": "不同模块互斥使用"
+    }
+  ],
+  "constraints": {
+    "flash": "512KB",
+    "sram": "64KB",
+    "external_sram": "1MB (FSMC)",
+    "clock": "72MHz (HSE 8MHz x PLL9)",
+    "display": "480x800 4.6寸触摸屏"
+  },
+  "changelog": [
+    {
+      "version": 1,
+      "date": "2026-05-06",
+      "type": "initial",
+      "description": "从现有代码库逆向生成初始需求文档"
+    }
+  ]
+}

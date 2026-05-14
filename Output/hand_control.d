@@ -1,4 +1,10 @@
 ..\..\output\hand_control.o: ..\..\Drivers\OVER\hand_control.c
+..\..\output\hand_control.o: ..\..\Drivers\./OVER/hand_control.h
+..\..\output\hand_control.o: ..\..\Drivers\./OVER/module.h
+..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
+..\..\output\hand_control.o: ..\..\User\stm32f1xx_hal_conf.h
+..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
+..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_def.h
 ..\..\output\hand_control.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h
 ..\..\output\hand_control.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f103xe.h
 ..\..\output\hand_control.o: ..\..\Drivers\CMSIS\Include\core_cm3.h
@@ -8,10 +14,6 @@
 ..\..\output\hand_control.o: ..\..\Drivers\CMSIS\Include\cmsis_armcc.h
 ..\..\output\hand_control.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\system_stm32f1xx.h
 ..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
-..\..\output\hand_control.o: ..\..\User\stm32f1xx_hal_conf.h
-..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
-..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_def.h
-..\..\output\hand_control.o: ..\..\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h
 ..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy/stm32_hal_legacy.h
 ..\..\output\hand_control.o: D:\keil5\ARM\ARMCC\Bin\..\include\stddef.h
 ..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc_ex.h
@@ -57,12 +59,10 @@
 ..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h
 ..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\hand_control.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
-..\..\output\hand_control.o: ..\..\Drivers\./OVER/hand_control.h
 ..\..\output\hand_control.o: ..\..\Drivers\./OVER/menu.h
 ..\..\output\hand_control.o: ..\..\Drivers\./BSP/LCD/lcd.h
 ..\..\output\hand_control.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\hand_control.o: ..\..\Drivers\./SYSTEM/sys/sys.h
-..\..\output\hand_control.o: ..\..\Drivers\./BSP/TOUCH/touch.h
-..\..\output\hand_control.o: ..\..\Drivers\./BSP/TOUCH/gt9xxx.h
-..\..\output\hand_control.o: ..\..\Drivers\./BSP/TOUCH/ft5206.h
+..\..\output\hand_control.o: ..\..\Drivers\./BSP/LCD/lcd_widgets.h
 ..\..\output\hand_control.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
+..\..\output\hand_control.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h

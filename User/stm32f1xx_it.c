@@ -22,6 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "./SYSTEM/sys/sys.h"
 #include "stm32f1xx_it.h"
+#include "./SYSTEM/usart/usart.h"
    
 /** @addtogroup STM32F1xx_HAL_Examples
   * @{
@@ -157,10 +158,13 @@ void SysTick_Handler(void)
 {
 }*/
 
+/* TIM2_IRQHandler 在 vdraw.c 中定义（PWM输入捕获模块） */
+/* mpu_pid.c 不使用 TIM2 中断，因此无冲突 */
+
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

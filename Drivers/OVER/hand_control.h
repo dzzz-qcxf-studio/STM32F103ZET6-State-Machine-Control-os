@@ -1,18 +1,13 @@
+/**
+ * @file    hand_control.h
+ * @brief   åæ ‡å‘é€æ¨¡å—æ¥å£ (USART3, PB10/PB11)
+ */
+
 #ifndef __HAND_CONTROL_H
 #define __HAND_CONTROL_H
 
-#include "stm32f1xx.h"
-#include "stm32f1xx_hal.h"
+#include "./OVER/module.h"
 
-// °üº¬menu.hÒÔÊ¹ÓÃÆäÖĞ¶¨ÒåµÄÃ¶¾ÙºÍ±äÁ¿
-#include "./OVER/menu.h"
-// °üº¬LCDºÍTOUCHµÄÍ·ÎÄ¼ş
-#include "./BSP/LCD/lcd.h"
-#include "./BSP/TOUCH/touch.h"
+extern const ModuleInterface hand_control_module;
 
-// ÉùÃ÷º¯Êı
-void Hand_Control(void);
-void MX_USART3_UART_Init(void);
-void usart_send_string(int32_t x, int32_t y);
-
-#endif   
+#endif /* __HAND_CONTROL_H */

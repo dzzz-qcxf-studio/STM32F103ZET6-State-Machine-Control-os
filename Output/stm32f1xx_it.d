@@ -59,3 +59,5 @@
 ..\..\output\stm32f1xx_it.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\stm32f1xx_it.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
 ..\..\output\stm32f1xx_it.o: ..\..\User\stm32f1xx_it.h
+..\..\output\stm32f1xx_it.o: ..\..\Drivers\./SYSTEM/usart/usart.h
+..\..\output\stm32f1xx_it.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h

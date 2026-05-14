@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>STM32 接线图 - 预览</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+        .diagram { display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap; padding: 40px; }
+        .module { background: #16213e; border: 2px solid #0f3460; border-radius: 10px; padding: 15px 20px; min-width: 120px; text-align: center; }
+        .mcu { border-color: #f9d71c; background: #0f3460; font-weight: bold; font-size: 18px; }
+        .input { border-color: #e94560; }
+        .output { border-color: #4ecca3; }
+        .arrow { color: #f9d71c; font-size: 24px; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center">STM32 接线图预览</h1>
+    <div class="diagram">
+        <div><div class="module input">输入模块</div></div>
+        <div class="arrow">&rarr;</div>
+        <div class="module mcu">STM32</div>
+        <div class="arrow">&rarr;</div>
+        <div><div class="module output">输出模块</div></div>
+    </div>
+</body>
+</html>

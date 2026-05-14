@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCU 接线图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            padding: 20px;
+            color: #eee;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        .wiring-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+        .module {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 150px;
+            border: 2px solid #0f3460;
+        }
+        .module-name {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .input .module-name { background: #e94560; }
+        .output .module-name { background: #4ecca3; color: #1a1a2e; }
+        .interface .module-name { background: #f9d71c; color: #1a1a2e; }
+        .mcu {
+            background: #0f3460;
+            border: 2px solid #f9d71c;
+        }
+        .mcu .module-name {
+            background: #f9d71c;
+            color: #1a1a2e;
+        }
+        .pins {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .pin {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            text-align: center;
+        }
+        .signal { background: #e94560; color: #fff; }
+        .vcc { background: #ff6b6b; color: #fff; }
+        .gnd { background: #333; color: #fff; }
+        .connections {
+            margin-top: 40px;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 10px;
+        }
+        .connections h3 {
+            margin-bottom: 15px;
+            color: #4ecca3;
+        }
+        .connection-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #0f3460;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .editable {
+            outline: none;
+            display: block;
+        }
+        .editable:focus {
+            background: #1a3a5c;
+            box-shadow: 0 0 0 2px #4ecca3;
+        }
+    </style>
+</head>
+<body>
+    <h1>MCU 硬件接线图</h1>
+    <div class="wiring-container">
+        <div class="module input">
+        <div class="module input">
+            <div class="module-name">输入模块</div>
+            <div class="pins">
+                <div class="pin signal">信号</div>
+                <div class="pin vcc">3.3V</div>
+                <div class="pin gnd">GND</div>
+            </div>
+        </div>
+        </div>
+        <div class="module mcu">
+            <div class="module-name">MCU</div>
+            <div class="pins">
+                <div class="pin editable" contenteditable="true">PA2 (TX)</div>
+                <div class="pin editable" contenteditable="true">PA3 (RX)</div>
+                <div class="pin editable" contenteditable="true">PB6 (SCL)</div>
+                <div class="pin editable" contenteditable="true">PB7 (SDA)</div>
+                <div class="pin editable" contenteditable="true">PA0 (ADC)</div>
+                <div class="pin vcc">3.3V</div>
+                <div class="pin gnd">GND</div>
+            </div>
+        </div>
+        <div class="module output">
+        <div class="module output">
+            <div class="module-name">输出模块</div>
+            <div class="pins">
+                <div class="pin signal">信号</div>
+                <div class="pin vcc">5V</div>
+                <div class="pin gnd">GND</div>
+            </div>
+        </div>
+        </div>
+        
+    </div>
+    <div class="connections">
+        <h3>接线说明</h3>
+        <div class="connection-item editable" contenteditable="true">输入模块 信号 → MCU PA0</div>
+        <div class="connection-item editable" contenteditable="true">输出模块 信号 → MCU PA1</div>
+    </div>
+</body>
+</html>

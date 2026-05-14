@@ -171,7 +171,7 @@ uint8_t Send(uint8_t* Buf)
     W_Reg(W_REGISTER+CONFIG,0x0E);
     W_CE(1);
 
-    while(R_IRQ()==1);//等待中断
+    { uint32_t _t0 = HAL_GetTick(); while(R_IRQ()==1) { if(HAL_GetTick()-_t0 >= 500) { W_Reg(FLUSH_TX,NOP); W_Reg(W_REGISTER+STATUS,0xFF); return 0; } } }//等待中断(500ms超时)
     Status= R_Reg(R_REGISTER+STATUS);
 
     if(Status & MAX_TX)//如果发送达到最大次数

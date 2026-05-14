@@ -1,4 +1,6 @@
 ..\..\output\vdraw.o: ..\..\Drivers\OVER\vdraw.c
+..\..\output\vdraw.o: ..\..\Drivers\./OVER/vdraw.h
+..\..\output\vdraw.o: ..\..\Drivers\./OVER/module.h
 ..\..\output\vdraw.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h
 ..\..\output\vdraw.o: ..\..\User\stm32f1xx_hal_conf.h
 ..\..\output\vdraw.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h
@@ -57,13 +59,10 @@
 ..\..\output\vdraw.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pcd_ex.h
 ..\..\output\vdraw.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_hcd.h
 ..\..\output\vdraw.o: ..\..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_mmc.h
+..\..\output\vdraw.o: ..\..\Drivers\./OVER/resource.h
+..\..\output\vdraw.o: ..\..\Drivers\./OVER/menu.h
 ..\..\output\vdraw.o: ..\..\Drivers\./BSP/LCD/lcd.h
 ..\..\output\vdraw.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\vdraw.o: ..\..\Drivers\./SYSTEM/sys/sys.h
-..\..\output\vdraw.o: ..\..\Drivers\./BSP/TOUCH/touch.h
-..\..\output\vdraw.o: ..\..\Drivers\./BSP/TOUCH/gt9xxx.h
-..\..\output\vdraw.o: ..\..\Drivers\./BSP/TOUCH/ft5206.h
-..\..\output\vdraw.o: ..\..\Drivers\./OVER/vdraw.h
-..\..\output\vdraw.o: ..\..\Drivers\./OVER/menu.h
+..\..\output\vdraw.o: ..\..\Drivers\./BSP/LCD/lcd_widgets.h
 ..\..\output\vdraw.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
-..\..\output\vdraw.o: D:\keil5\ARM\ARMCC\Bin\..\include\math.h

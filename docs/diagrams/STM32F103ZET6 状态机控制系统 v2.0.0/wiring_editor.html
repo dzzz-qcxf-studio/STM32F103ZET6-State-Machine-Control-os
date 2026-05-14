@@ -1,0 +1,2845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiring Diagram Editor</title>
+    <style>
+        /* ─── Design System: OKLCH, hue 250 base ─── */
+        :root {
+            --hue: 260;
+            /* Surface (dark) */
+            --bg: oklch(0.13 0.015 var(--hue));
+            --surface: oklch(0.18 0.015 var(--hue));
+            --surface-hover: oklch(0.22 0.015 var(--hue));
+            --border: oklch(0.3 0.015 var(--hue));
+            /* Semantic */
+            --mcu: oklch(0.85 0.18 90);
+            --input: oklch(0.6 0.22 15);
+            --output: oklch(0.75 0.17 160);
+            --interface: oklch(0.55 0.22 300);
+            --text: oklch(0.93 0.01 var(--hue));
+            --text-muted: oklch(0.6 0.015 var(--hue));
+            --danger: oklch(0.65 0.22 25);
+            --success: oklch(0.7 0.17 145);
+            --radius: 8px;
+            --grid: 20;
+            /* Wire palette — L≥0.68 for dark bg legibility */
+            --wire: oklch(0.7 0.15 var(--hue));
+            --wire-gnd: oklch(0.55 0.01 var(--hue));
+            --wire-vcc: oklch(0.65 0.22 25);
+            --wire-spi: oklch(0.75 0.14 200);
+            --wire-uart: oklch(0.72 0.17 145);
+            --wire-i2c: oklch(0.7 0.18 300);
+            --wire-adc: oklch(0.72 0.16 60);
+            --wire-pwm: oklch(0.72 0.18 340);
+            --wire-gpio: oklch(0.7 0.15 var(--hue));
+            /* Transition for theme switch */
+            --theme-speed: 0.2s;
+        }
+
+        /* Light theme — override via [data-theme="light"] */
+        [data-theme="light"] {
+            --bg: oklch(0.97 0.005 var(--hue));
+            --surface: oklch(0.95 0.005 var(--hue));
+            --surface-hover: oklch(0.92 0.008 var(--hue));
+            --border: oklch(0.85 0.01 var(--hue));
+            --mcu: oklch(0.5 0.18 90);
+            --input: oklch(0.48 0.22 15);
+            --output: oklch(0.42 0.15 160);
+            --interface: oklch(0.42 0.2 300);
+            --text: oklch(0.18 0.015 var(--hue));
+            --text-muted: oklch(0.5 0.015 var(--hue));
+            --danger: oklch(0.48 0.22 25);
+            --success: oklch(0.42 0.15 145);
+            /* Wire palette — L≤0.48 for light bg contrast */
+            --wire: oklch(0.45 0.2 var(--hue));
+            --wire-gnd: oklch(0.5 0.01 var(--hue));
+            --wire-vcc: oklch(0.48 0.22 25);
+            --wire-spi: oklch(0.42 0.18 210);
+            --wire-uart: oklch(0.4 0.16 145);
+            --wire-i2c: oklch(0.42 0.2 300);
+            --wire-adc: oklch(0.45 0.16 55);
+            --wire-pwm: oklch(0.45 0.2 340);
+            --wire-gpio: oklch(0.45 0.2 var(--hue));
+        }
+
+        /* Auto-detect system preference as default */
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme="dark"]) {
+                --bg: oklch(0.97 0.005 var(--hue));
+                --surface: oklch(0.95 0.005 var(--hue));
+                --surface-hover: oklch(0.92 0.008 var(--hue));
+                --border: oklch(0.85 0.01 var(--hue));
+                --mcu: oklch(0.5 0.18 90);
+                --input: oklch(0.48 0.22 15);
+                --output: oklch(0.42 0.15 160);
+                --interface: oklch(0.42 0.2 300);
+                --text: oklch(0.18 0.015 var(--hue));
+                --text-muted: oklch(0.5 0.015 var(--hue));
+                --danger: oklch(0.48 0.22 25);
+                --success: oklch(0.42 0.15 145);
+                --wire: oklch(0.45 0.2 var(--hue));
+                --wire-gnd: oklch(0.5 0.01 var(--hue));
+                --wire-vcc: oklch(0.48 0.22 25);
+                --wire-spi: oklch(0.42 0.18 210);
+                --wire-uart: oklch(0.4 0.16 145);
+                --wire-i2c: oklch(0.42 0.2 300);
+                --wire-adc: oklch(0.45 0.16 55);
+                --wire-pwm: oklch(0.45 0.2 340);
+                --wire-gpio: oklch(0.45 0.2 var(--hue));
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Consolas, 'Courier New', 'Noto Sans Mono CJK SC', monospace;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+            transition: background var(--theme-speed) ease, color var(--theme-speed) ease;
+        }
+
+        .app {
+            display: grid;
+            grid-template-rows: 48px 1fr;
+            grid-template-columns: 220px 1fr 260px;
+            height: 100vh;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 6px;
+        }
+
+        .toolbar-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--mcu);
+            margin-right: auto;
+            letter-spacing: -0.5px;
+        }
+
+        .toolbar-sep {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 4px;
+        }
+
+        .toolbar-btn {
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .toolbar-btn:hover { background: var(--border); border-color: var(--text-muted); }
+        .toolbar-btn:active { transform: scale(0.97); }
+        .toolbar-btn.primary { background: var(--mcu); color: var(--bg); border-color: var(--mcu); font-weight: 600; }
+        .toolbar-btn.primary:hover { filter: brightness(1.1); }
+        .toolbar-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+        .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .toolbar-btn .kbd {
+            font-size: 9px;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-left: 4px;
+        }
+
+        /* Module Library */
+        .module-library {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .library-search {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .library-search input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 6px 10px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        .library-search input:focus { outline: none; border-color: var(--mcu); }
+        .library-search input::placeholder { color: var(--text-muted); }
+
+        .library-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .library-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 8px 0 6px 4px;
+        }
+
+        .module-category { margin-bottom: 16px; }
+
+        .category-title {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 4px;
+        }
+
+        .category-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .category-dot.mcu { background: var(--mcu); }
+        .category-dot.input { background: var(--input); }
+        .category-dot.output { background: var(--output); }
+        .category-dot.interface { background: var(--interface); }
+
+        .module-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            cursor: grab;
+            font-size: 11px;
+            transition: all 0.12s ease;
+        }
+
+        .module-item:hover { border-color: var(--text-muted); transform: translateX(3px); }
+        .module-item.dragging { opacity: 0.4; }
+        .module-item.hidden { display: none; }
+        .module-item .pin-count { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Canvas */
+        .canvas-container {
+            position: relative;
+            overflow: hidden;
+            background: var(--bg);
+        }
+
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+            background-size: 20px 20px;
+            transform-origin: 0 0;
+            transition: none;
+        }
+
+        .canvas.panning {
+            cursor: grabbing;
+        }
+
+        .canvas-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .wire {
+            fill: none;
+            stroke: var(--wire);
+            stroke-width: 2;
+            pointer-events: stroke;
+            cursor: pointer;
+            transition: stroke-width 0.1s;
+        }
+
+        .wire:hover, .wire.selected { stroke-width: 3; filter: drop-shadow(0 0 4px var(--wire)); }
+        .wire.wire-gnd { stroke: var(--wire-gnd); stroke-dasharray: 4 3; }
+        .wire.wire-vcc { stroke: var(--wire-vcc); }
+        .wire.wire-spi { stroke: var(--wire-spi); }
+        .wire.wire-uart { stroke: var(--wire-uart); }
+        .wire.wire-i2c { stroke: var(--wire-i2c); }
+        .wire.wire-adc { stroke: var(--wire-adc); }
+        .wire.wire-pwm { stroke: var(--wire-pwm); }
+        .wire.wire-gpio { stroke: var(--wire-gpio); }
+
+        .wire-label {
+            font-size: 9px;
+            fill: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* Module Card */
+        .module-card {
+            position: absolute;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            min-width: 140px;
+            cursor: move;
+            user-select: none;
+            transition: box-shadow 0.12s ease;
+            z-index: 1;
+        }
+
+        .module-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 2; }
+        .module-card.selected { border-color: var(--mcu); box-shadow: 0 0 0 2px rgba(249, 215, 28, 0.25); z-index: 3; }
+
+        /* Compact mode for small components (resistor, MOSFET, etc.) */
+        .module-card.compact {
+            min-width: 60px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        .module-card.compact:hover { box-shadow: none; }
+        .module-card.compact.selected { box-shadow: 0 0 0 2px var(--accent); }
+        .module-card.compact .module-header { display: none; }
+        .module-card.compact .module-body {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 0;
+        }
+        .module-card.compact .pin-row {
+            padding: 0;
+        }
+        .module-card.compact .pin-name { display: none; }
+        .module-card.compact .pin-value { display: none; }
+        .module-card.compact .pin-indicator {
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--text-muted);
+            background: var(--bg);
+        }
+        .module-card.compact .module-actions { display: none; }
+        .compact-symbol {
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .module-header {
+            padding: 6px 10px;
+            border-radius: calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .module-card[data-type="mcu"] .module-header { background: var(--mcu); color: var(--bg); }
+        .module-card[data-type="input"] .module-header { background: var(--input); color: var(--text); }
+        .module-card[data-type="output"] .module-header { background: var(--output); color: var(--bg); }
+        .module-card[data-type="interface"] .module-header { background: var(--interface); color: var(--text); }
+
+        .module-body { padding: 8px 10px; }
+
+        .pin-row {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+            gap: 6px;
+            font-size: 10px;
+        }
+
+        /* 翻转状态：引脚行反向，引脚指示器移到另一侧 */
+        .module-card.flipped .pin-row {
+            flex-direction: row-reverse;
+        }
+
+        .pin-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            cursor: pointer;
+            transition: all 0.12s ease;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 5;
+        }
+
+        .wire-mode .pin-indicator:not(.connected) {
+            animation: pin-pulse 1s infinite;
+        }
+
+        @keyframes pin-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.6; }
+        }
+
+        .pin-indicator:hover { border-color: var(--wire); background: var(--wire); transform: scale(1.3); }
+        .pin-indicator.connected { background: var(--wire); border-color: var(--wire); }
+        .pin-indicator.input-pin { border-color: var(--input); }
+        .pin-indicator.output-pin { border-color: var(--output); }
+
+        .pin-name { flex: 1; color: var(--text-muted); font-size: 10px; }
+
+        .pin-value {
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 9px;
+            font-family: inherit;
+            width: 55px;
+            text-align: center;
+        }
+
+        .pin-value:focus { outline: none; border-color: var(--mcu); }
+
+        .module-actions {
+            display: flex;
+            gap: 4px;
+            padding: 4px 10px 6px;
+            border-top: 1px solid var(--border);
+        }
+
+        .module-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: inherit;
+            transition: all 0.12s ease;
+        }
+
+        .module-action-btn:hover { background: var(--bg); color: var(--text); }
+        .module-action-btn.delete:hover { color: var(--danger); }
+
+        /* Properties Panel */
+        .properties-panel {
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .properties-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 12px 12px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .properties-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .properties-empty {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-align: center;
+            padding: 40px 12px;
+            line-height: 1.8;
+        }
+
+        .property-group { margin-bottom: 14px; }
+
+        .property-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .property-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 6px 10px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        .property-input:focus { outline: none; border-color: var(--mcu); }
+        .property-input[readonly] { opacity: 0.6; cursor: default; }
+
+        .property-pins-list { display: flex; flex-direction: column; gap: 4px; }
+
+        .property-pin {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            font-size: 10px;
+        }
+
+        .property-pin-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .property-pin-indicator.input { background: var(--input); }
+        .property-pin-indicator.output { background: var(--output); }
+        .property-pin-indicator.bidirectional { background: var(--interface); }
+        .property-pin-name { flex: 1; }
+        .property-pin-status { font-size: 9px; color: var(--text-muted); }
+
+        /* Connection Summary (replaces AI panel) */
+        .summary-panel {
+            position: fixed;
+            bottom: 12px;
+            right: 280px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 300px;
+            max-height: 320px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 50;
+        }
+
+        .summary-panel.active { display: flex; }
+
+        .summary-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .summary-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 14px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .summary-item {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-item:last-child { border-bottom: none; }
+        .summary-item .from { color: var(--input); }
+        .summary-item .to { color: var(--output); }
+        .summary-item .via { color: var(--wire); }
+        .summary-item .pwr { color: var(--wire-vcc); }
+
+        /* Wire Mode Indicator */
+        .wire-mode-indicator {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--wire);
+            color: var(--bg);
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 600;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(88, 166, 255, 0.4);
+        }
+
+        .wire-mode-indicator.active { display: block; }
+
+        /* Export Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 640px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title { font-size: 13px; font-weight: 600; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 4px;
+        }
+
+        .modal-close:hover { color: var(--text); }
+
+        .modal-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+
+        .modal-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+
+        .modal-tab {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        .modal-tab:hover { border-color: var(--text-muted); }
+        .modal-tab.active { border-color: var(--mcu); color: var(--text); }
+
+        .export-code {
+            width: 100%;
+            height: 280px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 11px;
+            padding: 12px;
+            resize: none;
+        }
+
+        .export-code:focus { outline: none; border-color: var(--mcu); }
+
+        .modal-footer {
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 10px;
+            color: var(--text-muted);
+            height: 24px;
+        }
+
+        .status-item { display: flex; align-items: center; gap: 4px; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .status-dot.ok { background: var(--success); }
+        .status-dot.warn { background: var(--mcu); }
+        .status-dot.err { background: var(--danger); }
+
+        /* Validation Warning */
+        .validation-warn {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            border-radius: var(--radius);
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            font-size: 10px;
+            color: var(--danger);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 60px;
+            right: 280px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            font-size: 12px;
+            z-index: 300;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            transform: translateX(120%);
+            transition: transform 0.2s ease;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-title">Wiring Diagram Editor</div>
+            <button class="toolbar-btn" id="btn-undo" disabled title="撤销">
+                <span>&#8617;</span> <span class="kbd">Ctrl+Z</span>
+            </button>
+            <button class="toolbar-btn" id="btn-redo" disabled title="重做">
+                <span>&#8618;</span> <span class="kbd">Ctrl+Y</span>
+            </button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn" id="btn-new">新建</button>
+            <button class="toolbar-btn" id="btn-save">保存</button>
+            <button class="toolbar-btn" id="btn-export">导出</button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn" id="btn-summary">接线总览</button>
+            <button class="toolbar-btn" id="btn-clear-wires">清除连线</button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn" id="btn-theme" title="切换日/夜模式">🌙</button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn" id="btn-zoom-out" title="缩小">−</button>
+            <span id="zoom-level" style="font-size:12px;color:var(--text-muted);min-width:40px;text-align:center">100%</span>
+            <button class="toolbar-btn" id="btn-zoom-in" title="放大">+</button>
+            <button class="toolbar-btn" id="btn-zoom-reset" title="重置缩放">1:1</button>
+        </div>
+
+        <!-- Module Library -->
+        <div class="module-library">
+            <div class="library-search">
+                <input type="text" id="lib-search" placeholder="搜索模块...">
+            </div>
+            <div class="library-list" id="library-list">
+                <div class="library-title">模块库</div>
+
+                <div class="module-category" data-cat="mcu">
+                    <div class="category-title"><span class="category-dot mcu"></span>主控芯片</div>
+                    <div class="module-item" draggable="true" data-type="mcu" data-module="STM32F103">
+                        <div>STM32F103</div>
+                        <div class="pin-count">PA0-PA10, PB6-PB7, 3.3V, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="mcu" data-module="ESP32">
+                        <div>ESP32</div>
+                        <div class="pin-count">GPIO0-GPIO25, 3.3V, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="mcu" data-module="Arduino">
+                        <div>Arduino Uno</div>
+                        <div class="pin-count">D0-D13, A0-A5, 5V, 3.3V, GND</div>
+                    </div>
+                </div>
+
+                <div class="module-category" data-cat="input">
+                    <div class="category-title"><span class="category-dot input"></span>输入模块</div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="Voice Module">
+                        <div>语音模块</div>
+                        <div class="pin-count">TX, RX, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="SPI Module">
+                        <div>SPI 模块</div>
+                        <div class="pin-count">SCK, MISO, MOSI, CS, IRQ, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="Button">
+                        <div>按键</div>
+                        <div class="pin-count">SIG, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="IR Sensor">
+                        <div>红外传感器</div>
+                        <div class="pin-count">OUT, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="DHT11">
+                        <div>DHT11 温湿度</div>
+                        <div class="pin-count">DATA, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="PIR Sensor">
+                        <div>PIR 人体感应</div>
+                        <div class="pin-count">OUT, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="Ultrasonic">
+                        <div>超声波 HC-SR04</div>
+                        <div class="pin-count">TRIG, ECHO, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="MQ2">
+                        <div>MQ-2 烟雾/气体</div>
+                        <div class="pin-count">AOUT, DOUT, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="LDR">
+                        <div>光敏电阻</div>
+                        <div class="pin-count">AO, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="Keypad 4x4">
+                        <div>矩阵键盘 4x4</div>
+                        <div class="pin-count">R1-R4, C1-C4, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="Rotary Encoder">
+                        <div>旋转编码器</div>
+                        <div class="pin-count">CLK, DT, SW, VCC, GND</div>
+                    </div>
+                </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="PIR传感器">
+                        <div>PIR传感器</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="LD3320 语音识别模块">
+                        <div>LD3320 语音识别模块</div>
+                        <div class="pin-count">{ name, { name, { name, { name, { name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="HC-SR501">
+                        <div>HC-SR501</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="声音传感器模块（数字输出）">
+                        <div>声音传感器模块（数字输出）</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="LM393 声音传感器模块">
+                        <div>LM393 声音传感器模块</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="启动按钮(NO)">
+                        <div>启动按钮(NO)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="停止按钮(NC)">
+                        <div>停止按钮(NC)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="急停按钮(NC)">
+                        <div>急停按钮(NC)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="左限位磁性开关">
+                        <div>左限位磁性开关</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="右限位磁性开关">
+                        <div>右限位磁性开关</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="上限位磁性开关">
+                        <div>上限位磁性开关</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="下限位磁性开关">
+                        <div>下限位磁性开关</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="物料检测光电开关">
+                        <div>物料检测光电开关</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="手动/自动切换开关">
+                        <div>手动/自动切换开关</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="KEY">
+                        <div>KEY</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="TOUCH">
+                        <div>TOUCH</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="JOYSTICK">
+                        <div>JOYSTICK</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="MPU6050">
+                        <div>MPU6050</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="input" data-module="NRF24L01">
+                        <div>NRF24L01</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+
+                <div class="module-category" data-cat="output">
+                    <div class="category-title"><span class="category-dot output"></span>输出模块</div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="LED">
+                        <div>LED</div>
+                        <div class="pin-count">IN, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="RGB LED">
+                        <div>RGB LED</div>
+                        <div class="pin-count">R, G, B, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="Relay">
+                        <div>继电器</div>
+                        <div class="pin-count">IN, VCC, GND, COM, NO, NC</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="Buzzer">
+                        <div>蜂鸣器</div>
+                        <div class="pin-count">SIG, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="Servo">
+                        <div>舵机 SG90</div>
+                        <div class="pin-count">PWM, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="Motor">
+                        <div>电机驱动 L298N</div>
+                        <div class="pin-count">ENA, IN1, IN2, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="Stepper">
+                        <div>步进电机 28BYJ</div>
+                        <div class="pin-count">IN1-IN4, VCC, GND</div>
+                    </div>
+                </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="左转电磁阀(双电控)">
+                        <div>左转电磁阀(双电控)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="右转电磁阀(双电控)">
+                        <div>右转电磁阀(双电控)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="下降电磁阀(单电控)">
+                        <div>下降电磁阀(单电控)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="夹紧电磁阀(单电控)">
+                        <div>夹紧电磁阀(单电控)</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="运行指示灯">
+                        <div>运行指示灯</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="LCD">
+                        <div>LCD</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="output" data-module="L9110_MOTOR">
+                        <div>L9110_MOTOR</div>
+                        <div class="pin-count">{ name, { name, { name</div>
+                    </div>
+
+                <div class="module-category" data-cat="interface">
+                    <div class="category-title"><span class="category-dot interface"></span>通信/显示</div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="I2C OLED">
+                        <div>OLED 0.96"</div>
+                        <div class="pin-count">SCL, SDA, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="LCD 1602">
+                        <div>LCD 1602</div>
+                        <div class="pin-count">D4-D7, RS, EN, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="UART">
+                        <div>串口 TTL</div>
+                        <div class="pin-count">TX, RX, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="SPI Flash">
+                        <div>SPI Flash</div>
+                        <div class="pin-count">CS, SCK, MOSI, MISO, VCC, GND</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="NRF24L01">
+                        <div>NRF24L01 无线</div>
+                        <div class="pin-count">CE, CSN, SCK, MOSI, MISO, VCC, GND</div>
+                    </div>
+                </div>
+
+                <div class="module-category" data-cat="interface">
+                    <div class="category-title"><span class="category-dot interface"></span>辅助元件</div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="Resistor">
+                        <div>限流电阻</div>
+                        <div class="pin-count">IN, OUT</div>
+                    </div>
+                    <div class="module-item" draggable="true" data-type="interface" data-module="N-MOSFET">
+                        <div>N-MOSFET</div>
+                        <div class="pin-count">G, D, S</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-container" id="canvas-container">
+            <div class="canvas" id="canvas">
+                <svg class="canvas-svg" id="canvas-svg">
+                    <defs>
+                        <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L8,3 z" fill="var(--wire)" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="properties-panel">
+            <div class="properties-title">属性</div>
+            <div class="properties-body">
+                <div class="properties-empty" id="properties-empty">
+                    选择模块查看属性<br>
+                    拖放模块到画布<br>
+                    双击画布添加 MCU<br>
+                    <br>
+                    <span style="color:var(--text-muted);font-size:10px;">
+                    快捷键:<br>
+                    Ctrl+Z 撤销 | Ctrl+Y 重做<br>
+                    Delete 删除 | Esc 取消连线<br>
+                    R 换向连线 | F 翻转模块<br>
+                    Ctrl+S 保存 | Ctrl+E 导出
+                    </span>
+                </div>
+                <div id="wire-properties" style="display: none;">
+                    <div class="property-group">
+                        <div class="property-label">连线</div>
+                        <div id="wire-prop-info" style="font-size:11px;"></div>
+                    </div>
+                    <div style="display:flex;gap:6px;margin-top:8px;">
+                        <button class="module-action-btn" id="btn-wire-reverse-from" style="flex:1;">起点换向</button>
+                        <button class="module-action-btn" id="btn-wire-reverse-to" style="flex:1;">终点换向</button>
+                        <button class="module-action-btn" id="btn-wire-delete" style="flex:1;background:var(--danger);">删除</button>
+                    </div>
+                </div>
+                <div id="properties-content" style="display: none;">
+                    <div id="validation-warnings"></div>
+                    <div class="property-group">
+                        <div class="property-label">模块名称</div>
+                        <input type="text" class="property-input" id="prop-name">
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">类型</div>
+                        <input type="text" class="property-input" id="prop-type" readonly>
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">位置</div>
+                        <div style="display:flex;gap:6px;">
+                            <input type="number" class="property-input" id="prop-x" style="width:50%;" placeholder="X">
+                            <input type="number" class="property-input" id="prop-y" style="width:50%;" placeholder="Y">
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">引脚</div>
+                        <div class="property-pins-list" id="prop-pins-list"></div>
+                    </div>
+                    <div class="property-group">
+                        <div class="property-label">连接</div>
+                        <div id="prop-connections" style="font-size:10px;color:var(--text-muted);">无连接</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wire Mode Indicator -->
+    <div class="wire-mode-indicator" id="wire-mode">
+        点击目标引脚完成连接 &middot; ESC 取消
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="export-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">导出接线图</div>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-tabs">
+                    <button class="modal-tab active" data-tab="html">HTML</button>
+                    <button class="modal-tab" data-tab="mermaid">Mermaid</button>
+                    <button class="modal-tab" data-tab="json">JSON</button>
+                    <button class="modal-tab" data-tab="markdown">Markdown</button>
+                </div>
+                <textarea class="export-code" id="export-code" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="toolbar-btn" id="btn-copy">复制代码</button>
+                <button class="toolbar-btn primary" id="btn-download">下载</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Summary Panel -->
+    <div class="summary-panel" id="summary-panel">
+        <div class="summary-header">
+            <span>接线总览</span>
+            <button class="modal-close" id="summary-close">&times;</button>
+        </div>
+        <div class="summary-body" id="summary-body">
+            <div style="color:var(--text-muted);text-align:center;padding:20px;">暂无连接</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ─── State ───
+        const state = {
+            modules: [],
+            wires: [],
+            selectedModule: null,
+            selectedWire: null,
+            wireMode: false,
+            wireStartPin: null,
+            wireStartModule: null,
+            dragOffset: { x: 0, y: 0 },
+            idCounter: 1,
+            history: [],
+            historyIndex: -1,
+            maxHistory: 50,
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+            isPanning: false,
+            panStart: { x: 0, y: 0 },
+        };
+
+        // ─── Module Definitions ───
+        const moduleDefs = {
+            'STM32F103': {
+                type: 'mcu', pins: [
+                    { name: 'PA0', type: 'bidirectional', value: '' },
+                    { name: 'PA1', type: 'bidirectional', value: '' },
+                    { name: 'PA2', type: 'bidirectional', value: 'USART_TX' },
+                    { name: 'PA3', type: 'bidirectional', value: 'USART_RX' },
+                    { name: 'PA4', type: 'bidirectional', value: '' },
+                    { name: 'PA5', type: 'bidirectional', value: 'SPI_SCK' },
+                    { name: 'PA6', type: 'bidirectional', value: 'SPI_MISO' },
+                    { name: 'PA7', type: 'bidirectional', value: 'SPI_MOSI' },
+                    { name: 'PB0', type: 'bidirectional', value: '' },
+                    { name: 'PB1', type: 'bidirectional', value: '' },
+                    { name: 'PB6', type: 'bidirectional', value: 'I2C_SCL' },
+                    { name: 'PB7', type: 'bidirectional', value: 'I2C_SDA' },
+                    { name: '3.3V', type: 'output', value: 'VCC' },
+                    { name: 'GND', type: 'output', value: 'GND' },
+                ]
+            },
+            'ESP32': {
+                type: 'mcu', pins: [
+                    { name: 'GPIO0', type: 'bidirectional', value: '' },
+                    { name: 'GPIO2', type: 'bidirectional', value: 'LED' },
+                    { name: 'GPIO4', type: 'bidirectional', value: '' },
+                    { name: 'GPIO5', type: 'bidirectional', value: '' },
+                    { name: 'GPIO16', type: 'bidirectional', value: 'UART2_TX' },
+                    { name: 'GPIO17', type: 'bidirectional', value: 'UART2_RX' },
+                    { name: 'GPIO18', type: 'bidirectional', value: 'SPI_SCK' },
+                    { name: 'GPIO19', type: 'bidirectional', value: 'SPI_MISO' },
+                    { name: 'GPIO21', type: 'bidirectional', value: 'I2C_SDA' },
+                    { name: 'GPIO22', type: 'bidirectional', value: 'I2C_SCL' },
+                    { name: 'GPIO23', type: 'bidirectional', value: 'SPI_MOSI' },
+                    { name: '3.3V', type: 'output', value: 'VCC' },
+                    { name: 'GND', type: 'output', value: 'GND' },
+                ]
+            },
+            'Arduino': {
+                type: 'mcu', pins: [
+                    { name: 'D0', type: 'bidirectional', value: 'RX' },
+                    { name: 'D1', type: 'bidirectional', value: 'TX' },
+                    { name: 'D2', type: 'bidirectional', value: 'INT0' },
+                    { name: 'D3', type: 'bidirectional', value: 'PWM' },
+                    { name: 'D5', type: 'bidirectional', value: 'PWM' },
+                    { name: 'D6', type: 'bidirectional', value: 'PWM' },
+                    { name: 'D9', type: 'bidirectional', value: 'PWM' },
+                    { name: 'D10', type: 'bidirectional', value: 'SPI_SS' },
+                    { name: 'D11', type: 'bidirectional', value: 'SPI_MOSI' },
+                    { name: 'D12', type: 'bidirectional', value: 'SPI_MISO' },
+                    { name: 'D13', type: 'bidirectional', value: 'SPI_SCK' },
+                    { name: 'A4', type: 'bidirectional', value: 'I2C_SDA' },
+                    { name: 'A5', type: 'bidirectional', value: 'I2C_SCL' },
+                    { name: '5V', type: 'output', value: 'VCC' },
+                    { name: '3.3V', type: 'output', value: 'VCC' },
+                    { name: 'GND', type: 'output', value: 'GND' },
+                ]
+            },
+            'Voice Module': { type: 'input', pins: [
+                { name: 'TX', type: 'output', value: '' },
+                { name: 'RX', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V/5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'SPI Module': { type: 'input', pins: [
+                { name: 'SCK', type: 'output', value: 'SPI_CLK' },
+                { name: 'MISO', type: 'input', value: 'SPI_MISO' },
+                { name: 'MOSI', type: 'output', value: 'SPI_MOSI' },
+                { name: 'CS', type: 'output', value: 'SPI_CS' },
+                { name: 'IRQ', type: 'input', value: '中断' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Button': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: 'VCC' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'IR Sensor': { type: 'input', pins: [
+                { name: 'OUT', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V/5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'DHT11': { type: 'input', pins: [
+                { name: 'DATA', type: 'bidirectional', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V/5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'PIR Sensor': { type: 'input', pins: [
+                { name: 'OUT', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V/5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Ultrasonic': { type: 'input', pins: [
+                { name: 'TRIG', type: 'input', value: '' },
+                { name: 'ECHO', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'MQ2': { type: 'input', pins: [
+                { name: 'AOUT', type: 'output', value: 'ADC' },
+                { name: 'DOUT', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'LDR': { type: 'input', pins: [
+                { name: 'AO', type: 'output', value: 'ADC' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Keypad 4x4': { type: 'input', pins: [
+                { name: 'R1', type: 'output', value: '' },
+                { name: 'R2', type: 'output', value: '' },
+                { name: 'R3', type: 'output', value: '' },
+                { name: 'R4', type: 'output', value: '' },
+                { name: 'C1', type: 'input', value: '' },
+                { name: 'C2', type: 'input', value: '' },
+                { name: 'C3', type: 'input', value: '' },
+                { name: 'C4', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Rotary Encoder': { type: 'input', pins: [
+                { name: 'CLK', type: 'output', value: '' },
+                { name: 'DT', type: 'output', value: '' },
+                { name: 'SW', type: 'output', value: '按钮' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'L9110_MOTOR': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'LCD': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'NRF24L01': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'MPU6050': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'JOYSTICK': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'TOUCH': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'KEY': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '运行指示灯': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '夹紧电磁阀(单电控)': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '下降电磁阀(单电控)': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '右转电磁阀(双电控)': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '左转电磁阀(双电控)': { type: 'output', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '手动/自动切换开关': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '物料检测光电开关': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '下限位磁性开关': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '上限位磁性开关': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '右限位磁性开关': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '左限位磁性开关': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '急停按钮(NC)': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '停止按钮(NC)': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '启动按钮(NO)': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'LM393 声音传感器模块': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            '声音传感器模块（数字输出）': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'HC-SR501': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'LD3320 语音识别模块': { type: 'input', pins: [
+                { name: 'SCK', type: 'output', value: 'SPI_CLK' },
+                { name: 'MISO', type: 'input', value: 'SPI_MISO' },
+                { name: 'MOSI', type: 'output', value: 'SPI_MOSI' },
+                { name: 'CS', type: 'output', value: 'SPI_CS' },
+                { name: 'IRQ', type: 'input', value: '中断' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'PIR传感器': { type: 'input', pins: [
+                { name: 'SIG', type: 'output', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' }
+            ]},
+            'LED': { type: 'output', pins: [
+                { name: 'IN', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: 'VCC' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'RGB LED': { type: 'output', pins: [
+                { name: 'R', type: 'input', value: 'PWM' },
+                { name: 'G', type: 'input', value: 'PWM' },
+                { name: 'B', type: 'input', value: 'PWM' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Relay': { type: 'output', pins: [
+                { name: 'IN', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+                { name: 'COM', type: 'output', value: '' },
+                { name: 'NO', type: 'output', value: '' },
+                { name: 'NC', type: 'output', value: '' },
+            ]},
+            'Buzzer': { type: 'output', pins: [
+                { name: 'SIG', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: 'VCC' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Servo': { type: 'output', pins: [
+                { name: 'PWM', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Motor': { type: 'output', pins: [
+                { name: 'ENA', type: 'input', value: 'PWM' },
+                { name: 'IN1', type: 'input', value: '' },
+                { name: 'IN2', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '12V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Stepper': { type: 'output', pins: [
+                { name: 'IN1', type: 'input', value: '' },
+                { name: 'IN2', type: 'input', value: '' },
+                { name: 'IN3', type: 'input', value: '' },
+                { name: 'IN4', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'I2C OLED': { type: 'interface', pins: [
+                { name: 'SCL', type: 'input', value: 'I2C_SCL' },
+                { name: 'SDA', type: 'bidirectional', value: 'I2C_SDA' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'LCD 1602': { type: 'interface', pins: [
+                { name: 'D4', type: 'bidirectional', value: '' },
+                { name: 'D5', type: 'bidirectional', value: '' },
+                { name: 'D6', type: 'bidirectional', value: '' },
+                { name: 'D7', type: 'bidirectional', value: '' },
+                { name: 'RS', type: 'input', value: '' },
+                { name: 'EN', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'UART': { type: 'interface', pins: [
+                { name: 'TX', type: 'output', value: '' },
+                { name: 'RX', type: 'input', value: '' },
+                { name: 'VCC', type: 'input', value: '3.3V/5V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'SPI Flash': { type: 'interface', pins: [
+                { name: 'CS', type: 'input', value: '' },
+                { name: 'SCK', type: 'input', value: 'SPI_SCK' },
+                { name: 'MOSI', type: 'input', value: 'SPI_MOSI' },
+                { name: 'MISO', type: 'output', value: 'SPI_MISO' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'NRF24L01': { type: 'interface', pins: [
+                { name: 'CE', type: 'input', value: '' },
+                { name: 'CSN', type: 'input', value: '' },
+                { name: 'SCK', type: 'input', value: 'SPI_SCK' },
+                { name: 'MOSI', type: 'input', value: 'SPI_MOSI' },
+                { name: 'MISO', type: 'output', value: 'SPI_MISO' },
+                { name: 'VCC', type: 'input', value: '3.3V' },
+                { name: 'GND', type: 'input', value: 'GND' },
+            ]},
+            'Resistor': { type: 'interface', pins: [
+                { name: 'IN', type: 'input', value: '' },
+                { name: 'OUT', type: 'output', value: '' },
+            ]},
+            'N-MOSFET': { type: 'interface', pins: [
+                { name: 'G', type: 'input', value: '' },
+                { name: 'D', type: 'output', value: '' },
+                { name: 'S', type: 'input', value: 'GND' },
+            ]},
+        };
+
+        // ─── DOM ───
+        const canvas = document.getElementById('canvas');
+        const canvasSvg = document.getElementById('canvas-svg');
+        const wireModeIndicator = document.getElementById('wire-mode');
+        const propertiesEmpty = document.getElementById('properties-empty');
+        const propertiesContent = document.getElementById('properties-content');
+        const exportModal = document.getElementById('export-modal');
+        const summaryPanel = document.getElementById('summary-panel');
+        const toastEl = document.getElementById('toast');
+
+        // ─── Toast ───
+        function showToast(msg, type) {
+            toastEl.textContent = msg;
+            toastEl.className = 'toast show ' + (type || '');
+            clearTimeout(toastEl._t);
+            toastEl._t = setTimeout(() => toastEl.className = 'toast', 2000);
+        }
+
+        // ─── Grid Snap ───
+        function snap(v) { return Math.round(v / 20) * 20; }
+
+        // ─── Undo/Redo ───
+        function saveSnapshot() {
+            const snapshot = JSON.stringify({
+                modules: state.modules.map(m => ({ ...m, pins: m.pins.map(p => ({ ...p })) })),
+                wires: state.wires.map(w => ({ ...w })),
+                idCounter: state.idCounter,
+            });
+            // Remove future history if we're in the middle
+            state.history = state.history.slice(0, state.historyIndex + 1);
+            state.history.push(snapshot);
+            if (state.history.length > state.maxHistory) state.history.shift();
+            state.historyIndex = state.history.length - 1;
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (state.historyIndex <= 0) return;
+            state.historyIndex--;
+            restoreSnapshot(state.history[state.historyIndex]);
+            showToast('撤销', 'success');
+        }
+
+        function redo() {
+            if (state.historyIndex >= state.history.length - 1) return;
+            state.historyIndex++;
+            restoreSnapshot(state.history[state.historyIndex]);
+            showToast('重做', 'success');
+        }
+
+        function restoreSnapshot(json) {
+            const data = JSON.parse(json);
+            // Clear canvas
+            document.querySelectorAll('.module-card').forEach(el => el.remove());
+            document.querySelectorAll('.wire').forEach(el => el.remove());
+            document.querySelectorAll('.wire-label').forEach(el => el.remove());
+            state.modules = [];
+            state.wires = [];
+            state.selectedModule = null;
+            state.idCounter = data.idCounter;
+
+            data.modules.forEach(m => {
+                state.modules.push(m);
+                renderModule(m);
+            });
+            data.wires.forEach(w => {
+                state.wires.push(w);
+                renderWire(w);
+                updatePinConnected(w.fromModule, w.fromPin, true);
+                updatePinConnected(w.toModule, w.toPin, true);
+            });
+            updatePropertiesPanel();
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            document.getElementById('btn-undo').disabled = state.historyIndex <= 0;
+            document.getElementById('btn-redo').disabled = state.historyIndex >= state.history.length - 1;
+        }
+
+        // ─── Wire Validation ───
+        function validateWire(fromModule, fromPin, toModule, toPin) {
+            const warnings = [];
+            const fromM = state.modules.find(m => m.id === fromModule);
+            const toM = state.modules.find(m => m.id === toModule);
+            if (!fromM || !toM) return ['模块不存在'];
+
+            const fp = fromM.pins.find(p => p.name === fromPin);
+            const tp = toM.pins.find(p => p.name === toPin);
+            if (!fp || !tp) return ['引脚不存在'];
+
+            // Check: GND should connect to GND
+            if ((fromPin === 'GND' && toPin !== 'GND') || (fromPin !== 'GND' && toPin === 'GND')) {
+                warnings.push('GND 引脚应连接到 GND');
+            }
+
+            // Check: power pins shouldn't connect to signal pins
+            const isPower = n => n === 'VCC' || n === '3.3V' || n === '5V' || n === 'GND';
+            if (isPower(fromPin) && !isPower(toPin)) {
+                warnings.push('电源引脚连接到信号引脚，请确认');
+            }
+
+            // Check: duplicate wire
+            const dup = state.wires.find(w =>
+                (w.fromModule === fromModule && w.fromPin === fromPin && w.toModule === toModule && w.toPin === toPin) ||
+                (w.fromModule === toModule && w.fromPin === toPin && w.toModule === fromModule && w.toPin === fromPin)
+            );
+            if (dup) warnings.push('重复连线');
+
+            // Check: self connection
+            if (fromModule === toModule) warnings.push('不能连接到自身');
+
+            return warnings;
+        }
+
+        // ─── Pin Connected State ───
+        function updatePinConnected(moduleId, pinName, connected) {
+            const el = document.getElementById(moduleId);
+            if (!el) return;
+            const pinEl = el.querySelector(`[data-pin="${pinName}"]`);
+            if (pinEl) {
+                if (connected) pinEl.classList.add('connected');
+                else pinEl.classList.remove('connected');
+            }
+        }
+
+        // ─── Library Search ───
+        document.getElementById('lib-search').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            document.querySelectorAll('.module-item').forEach(item => {
+                const name = item.dataset.module.toLowerCase();
+                const text = item.textContent.toLowerCase();
+                item.classList.toggle('hidden', q && !name.includes(q) && !text.includes(q));
+            });
+        });
+
+        // ─── Drag & Drop ───
+        let dragData = null;
+
+        document.querySelectorAll('.module-item[draggable]').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                dragData = { type: e.target.dataset.type, module: e.target.dataset.module };
+                e.target.classList.add('dragging');
+            });
+            item.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+        });
+
+        canvas.addEventListener('dragover', (e) => e.preventDefault());
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!dragData) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = snap(e.clientX - rect.left - 70);
+            const y = snap(e.clientY - rect.top - 20);
+            addModule(dragData.module, dragData.type, x, y);
+            dragData = null;
+        });
+
+        canvas.addEventListener('dblclick', (e) => {
+            if (e.target === canvas || e.target === canvasSvg) {
+                const rect = canvas.getBoundingClientRect();
+                const x = snap(e.clientX - rect.left - 70);
+                const y = snap(e.clientY - rect.top - 20);
+                // Show a quick picker - default to STM32
+                addModule('STM32F103', 'mcu', x, y);
+            }
+        });
+
+        // ─── Module CRUD ───
+        function addModule(name, type, x, y) {
+            const def = moduleDefs[name];
+            if (!def) { showToast('未知模块: ' + name, 'error'); return; }
+
+            const id = `module-${state.idCounter++}`;
+            const mod = {
+                id, name, type, x, y,
+                pins: def.pins.map(p => ({ ...p, connected: false })),
+            };
+
+            state.modules.push(mod);
+            renderModule(mod);
+            selectModule(id);
+            saveSnapshot();
+            return mod;
+        }
+
+        const COMPACT_SYMBOLS = {
+            'Resistor': '<svg class="compact-symbol" width="48" height="20" viewBox="0 0 48 20"><path d="M0 10 L8 10 L11 3 L17 17 L23 3 L29 17 L35 3 L40 10 L48 10" stroke="var(--text)" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg>',
+            'N-MOSFET': '<svg class="compact-symbol" width="36" height="32" viewBox="0 0 36 32"><path d="M0 16 L10 16 M10 6 L10 26 M14 6 L14 26 M14 10 L26 4 M14 16 L22 16 L22 28 L14 28 L14 26 M26 4 L26 12 M22 16 L26 16 L26 28 M22 28 L26 28" stroke="var(--text)" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>',
+        };
+
+        function renderModule(mod) {
+            const isCompact = mod.type === 'interface' && mod.pins.length <= 3;
+            const el = document.createElement('div');
+            el.className = 'module-card' + (mod.flipped ? ' flipped' : '') + (isCompact ? ' compact' : '');
+            el.id = mod.id;
+            el.dataset.type = mod.type;
+            el.style.left = `${mod.x}px`;
+            el.style.top = `${mod.y}px`;
+
+            if (isCompact) {
+                const symbol = COMPACT_SYMBOLS[mod.name] || '';
+                const inputPins = mod.pins.filter(p => p.type === 'input');
+                const outputPins = mod.pins.filter(p => p.type === 'output');
+                el.innerHTML = `
+                    <div class="module-body">
+                        ${inputPins.map((pin, idx) => `
+                            <div class="pin-row" data-pin-idx="${mod.pins.indexOf(pin)}">
+                                <div class="pin-indicator input-pin ${pin.connected ? 'connected' : ''}"
+                                     data-pin="${pin.name}" title="${pin.name}"></div>
+                            </div>
+                        `).join('')}
+                        ${symbol}
+                        ${outputPins.map((pin, idx) => `
+                            <div class="pin-row" data-pin-idx="${mod.pins.indexOf(pin)}">
+                                <div class="pin-indicator output-pin ${pin.connected ? 'connected' : ''}"
+                                     data-pin="${pin.name}" title="${pin.name}"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                el.innerHTML = `
+                    <div class="module-header">${mod.name}</div>
+                    <div class="module-body">
+                        ${mod.pins.map((pin, idx) => {
+                            const pinClass = pin.type === 'input' ? 'input-pin' : 'output-pin';
+                            const connClass = pin.connected ? 'connected' : '';
+                            return `
+                            <div class="pin-row" data-pin-idx="${idx}">
+                                <div class="pin-indicator ${pinClass} ${connClass}"
+                                     data-pin="${pin.name}" title="${pin.name}"></div>
+                                <div class="pin-name">${pin.name}</div>
+                                <input type="text" class="pin-value" value="${pin.value || ''}" placeholder="—" data-pin-idx="${idx}">
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    <div class="module-actions">
+                        <button class="module-action-btn" data-action="flip">翻转</button>
+                        <button class="module-action-btn" data-action="duplicate">复制</button>
+                        <button class="module-action-btn delete" data-action="delete">删除</button>
+                    </div>
+                `;
+            }
+
+            // Pin click for wiring
+            el.querySelectorAll('.pin-indicator').forEach(pinEl => {
+                pinEl.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    handlePinClick(mod, pinEl);
+                });
+            });
+
+            // Pin value editing
+            el.querySelectorAll('.pin-value').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.dataset.pinIdx);
+                    mod.pins[idx].value = e.target.value;
+                    saveSnapshot();
+                });
+                input.addEventListener('mousedown', (e) => e.stopPropagation());
+            });
+
+            // Module drag
+            el.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('pin-indicator') ||
+                    e.target.classList.contains('pin-value') ||
+                    e.target.classList.contains('module-action-btn')) return;
+                startDrag(e, mod);
+            });
+
+            el.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('pin-indicator')) selectModule(mod.id);
+            });
+
+            // Action buttons
+            el.querySelectorAll('.module-action-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const action = e.target.dataset.action;
+                    if (action === 'delete') deleteModule(mod.id);
+                    if (action === 'duplicate') duplicateModule(mod.id);
+                    if (action === 'flip') flipModule(mod.id);
+                });
+            });
+
+            canvas.appendChild(el);
+        }
+
+        function startDrag(e, mod) {
+            selectModule(mod.id);
+            state.dragOffset = { x: e.clientX - mod.x, y: e.clientY - mod.y };
+
+            const onMouseMove = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = snap(Math.max(0, Math.min(e.clientX - state.dragOffset.x, rect.width - 140)));
+                const y = snap(Math.max(0, Math.min(e.clientY - state.dragOffset.y, rect.height - 80)));
+                mod.x = x;
+                mod.y = y;
+                const el = document.getElementById(mod.id);
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                updateAllWires();
+            };
+
+            const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                saveSnapshot();
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        function deleteModule(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+
+            // Remove connected wires
+            const wiresToRemove = state.wires.filter(w => w.fromModule === id || w.toModule === id);
+            wiresToRemove.forEach(w => {
+                const pathEl = document.getElementById(w.id);
+                if (pathEl) pathEl.remove();
+                const labelEl = document.querySelector(`.wire-label[data-wire="${w.id}"]`);
+                if (labelEl) labelEl.remove();
+            });
+
+            state.modules = state.modules.filter(m => m.id !== id);
+            state.wires = state.wires.filter(w => w.fromModule !== id && w.toModule !== id);
+
+            if (state.selectedModule?.id === id) {
+                state.selectedModule = null;
+                updatePropertiesPanel();
+            }
+            saveSnapshot();
+        }
+
+        function duplicateModule(id) {
+            const src = state.modules.find(m => m.id === id);
+            if (!src) return;
+            const dup = addModule(src.name, src.type, src.x + 30, src.y + 30);
+            if (dup && src.flipped) {
+                dup.flipped = true;
+                document.getElementById(dup.id)?.classList.add('flipped');
+            }
+        }
+
+        function flipModule(id) {
+            const mod = state.modules.find(m => m.id === id);
+            if (!mod) return;
+            const el = document.getElementById(id);
+            if (!el) return;
+            mod.flipped = !mod.flipped;
+            el.classList.toggle('flipped', mod.flipped);
+            // 翻转后重新计算所有连线位置
+            updateAllWires();
+            saveSnapshot();
+        }
+
+        // ─── Wiring ───
+        function handlePinClick(mod, pinEl) {
+            if (state.wireMode) {
+                if (state.wireStartModule.id !== mod.id) {
+                    const warnings = validateWire(
+                        state.wireStartModule.id, state.wireStartPin,
+                        mod.id, pinEl.dataset.pin
+                    );
+                    if (warnings.length > 0) {
+                        showToast(warnings[0], 'error');
+                    }
+                    addWire(state.wireStartModule.id, state.wireStartPin, mod.id, pinEl.dataset.pin);
+                }
+                cancelWireMode();
+            } else {
+                state.wireMode = true;
+                state.wireStartModule = mod;
+                state.wireStartPin = pinEl.dataset.pin;
+                pinEl.classList.add('connected');
+                wireModeIndicator.classList.add('active');
+                canvas.classList.add('wire-mode');
+            }
+        }
+
+        function cancelWireMode() {
+            state.wireMode = false;
+            state.wireStartModule = null;
+            state.wireStartPin = null;
+            wireModeIndicator.classList.remove('active');
+            canvas.classList.remove('wire-mode');
+        }
+
+        function addWire(fromModule, fromPin, toModule, toPin) {
+            // Detect wire class based on pin names
+            let wireClass = '';
+            if (fromPin === 'GND' || toPin === 'GND') wireClass = 'wire-gnd';
+            else if (fromPin === 'VCC' || toPin === 'VCC' || fromPin === '3.3V' || toPin === '3.3V' || fromPin === '5V' || toPin === '5V') wireClass = 'wire-vcc';
+            else {
+                const p = (fromPin + ' ' + toPin).toUpperCase();
+                if (/SCK|MOSI|MISO|CS\b|NSS/.test(p)) wireClass = 'wire-spi';
+                else if (/TX|RX/.test(p)) wireClass = 'wire-uart';
+                else if (/SCL|SDA/.test(p)) wireClass = 'wire-i2c';
+                else if (/ADC|AOUT|AO\b|A\d/.test(p)) wireClass = 'wire-adc';
+                else if (/PWM|ENA/.test(p)) wireClass = 'wire-pwm';
+                else wireClass = 'wire-gpio';
+            }
+
+            const id = `wire-${state.idCounter++}`;
+            const wire = { id, fromModule, fromPin, toModule, toPin, wireClass, dirFrom: false, dirTo: false };
+            state.wires.push(wire);
+            renderWire(wire);
+            updatePinConnected(fromModule, fromPin, true);
+            updatePinConnected(toModule, toPin, true);
+            saveSnapshot();
+        }
+
+        function renderWire(wire) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.id = wire.id;
+            path.classList.add('wire');
+            if (wire.wireClass) path.classList.add(wire.wireClass);
+            path.dataset.from = wire.fromModule;
+            path.dataset.to = wire.toModule;
+            path.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectWire(wire.id);
+            });
+            canvasSvg.appendChild(path);
+            updateWirePath(wire);
+
+            // Add wire label
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.classList.add('wire-label');
+            label.dataset.wire = wire.id;
+            label.textContent = `${wire.fromPin}→${wire.toPin}`;
+            canvasSvg.appendChild(label);
+            updateWireLabel(wire, label);
+        }
+
+        function updateWirePath(wire) {
+            const fromEl = document.getElementById(wire.fromModule);
+            const toEl = document.getElementById(wire.toModule);
+            const pathEl = document.getElementById(wire.id);
+            if (!fromEl || !toEl || !pathEl) return;
+
+            const fromPinEl = fromEl.querySelector(`[data-pin="${wire.fromPin}"]`);
+            const toPinEl = toEl.querySelector(`[data-pin="${wire.toPin}"]`);
+            if (!fromPinEl || !toPinEl) return;
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const fromPinRect = fromPinEl.getBoundingClientRect();
+            const toPinRect = toPinEl.getBoundingClientRect();
+            const fromModRect = fromEl.getBoundingClientRect();
+            const toModRect = toEl.getBoundingClientRect();
+
+            // getBoundingClientRect 返回屏幕坐标，需除以缩放比得到画布坐标
+            const zoom = state.zoom || 1;
+            const fromX = (fromPinRect.left + fromPinRect.width / 2 - canvasRect.left) / zoom;
+            const fromY = (fromPinRect.top + fromPinRect.height / 2 - canvasRect.top) / zoom;
+            const toX = (toPinRect.left + toPinRect.width / 2 - canvasRect.left) / zoom;
+            const toY = (toPinRect.top + toPinRect.height / 2 - canvasRect.top) / zoom;
+
+            // 判断引脚在模块的哪一侧：引脚中心 vs 模块中心
+            const fromPinCenter = fromPinRect.left + fromPinRect.width / 2;
+            const fromModCenter = fromModRect.left + fromModRect.width / 2;
+            const toPinCenter = toPinRect.left + toPinRect.width / 2;
+            const toModCenter = toModRect.left + toModRect.width / 2;
+            let fromDir = fromPinCenter >= fromModCenter ? 1 : -1;
+            let toDir = toPinCenter >= toModCenter ? 1 : -1;
+            // 手动换向：分别控制起点/终点控制点方向
+            if (wire.dirFrom) fromDir *= -1;
+            if (wire.dirTo) toDir *= -1;
+
+            const dx = Math.abs(toX - fromX);
+            const cpOffset = Math.max(40, dx * 0.4);
+            const d = `M ${fromX} ${fromY} C ${fromX + fromDir * cpOffset} ${fromY}, ${toX - toDir * cpOffset} ${toY}, ${toX} ${toY}`;
+            pathEl.setAttribute('d', d);
+        }
+
+        function updateWireLabel(wire, labelEl) {
+            const pathEl = document.getElementById(wire.id);
+            if (!pathEl || !labelEl) return;
+            try {
+                const pathLength = pathEl.getTotalLength();
+                const mid = pathEl.getPointAtLength(pathLength / 2);
+                labelEl.setAttribute('x', mid.x);
+                labelEl.setAttribute('y', mid.y - 6);
+                labelEl.setAttribute('text-anchor', 'middle');
+            } catch(e) {}
+        }
+
+        function updateAllWires() {
+            state.wires.forEach(wire => {
+                updateWirePath(wire);
+                const labelEl = document.querySelector(`.wire-label[data-wire="${wire.id}"]`);
+                updateWireLabel(wire, labelEl);
+            });
+        }
+
+        function selectWire(id) {
+            document.querySelectorAll('.wire').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.module-card').forEach(el => el.classList.remove('selected'));
+            state.selectedModule = null;
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('selected');
+                state.selectedWire = state.wires.find(w => w.id === id);
+            }
+            updatePropertiesPanel();
+        }
+
+        function deleteSelectedWire() {
+            if (!state.selectedWire) return;
+            const w = state.selectedWire;
+            const pathEl = document.getElementById(w.id);
+            if (pathEl) pathEl.remove();
+            const labelEl = document.querySelector(`.wire-label[data-wire="${w.id}"]`);
+            if (labelEl) labelEl.remove();
+
+            // Update pin connected state
+            const fromStill = state.wires.some(ww => ww.id !== w.id && (ww.fromModule === w.fromModule && ww.fromPin === w.fromPin));
+            const toStill = state.wires.some(ww => ww.id !== w.id && (ww.toModule === w.toModule && ww.toPin === w.toPin));
+            if (!fromStill) updatePinConnected(w.fromModule, w.fromPin, false);
+            if (!toStill) updatePinConnected(w.toModule, w.toPin, false);
+
+            state.wires = state.wires.filter(ww => ww.id !== w.id);
+            state.selectedWire = null;
+            saveSnapshot();
+        }
+
+        // ─── Selection & Properties ───
+        function selectModule(id) {
+            document.querySelectorAll('.module-card').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.wire').forEach(el => el.classList.remove('selected'));
+            state.selectedWire = null;
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('selected');
+                state.selectedModule = state.modules.find(m => m.id === id);
+                updatePropertiesPanel();
+            }
+        }
+
+        function updatePropertiesPanel() {
+            const wire = state.selectedWire;
+            const mod = state.selectedModule;
+
+            // 连线属性面板
+            const wirePropsEl = document.getElementById('wire-properties');
+            if (wire && !mod) {
+                propertiesEmpty.style.display = 'none';
+                propertiesContent.style.display = 'none';
+                wirePropsEl.style.display = 'block';
+                const fromMod = state.modules.find(m => m.id === wire.fromModule);
+                const toMod = state.modules.find(m => m.id === wire.toModule);
+                document.getElementById('wire-prop-info').innerHTML =
+                    `<div style="margin-bottom:6px"><b>${fromMod?.name || '?'}</b>.${wire.fromPin} → <b>${toMod?.name || '?'}</b>.${wire.toPin}</div>` +
+                    `<div style="font-size:10px;color:var(--text-muted)">起点: ${wire.dirFrom ? '已反转' : '默认'} &middot; 终点: ${wire.dirTo ? '已反转' : '默认'}</div>`;
+                return;
+            }
+
+            wirePropsEl.style.display = 'none';
+
+            if (!mod) {
+                propertiesEmpty.style.display = 'block';
+                propertiesContent.style.display = 'none';
+                return;
+            }
+
+            propertiesEmpty.style.display = 'none';
+            propertiesContent.style.display = 'block';
+
+            document.getElementById('prop-name').value = mod.name;
+            document.getElementById('prop-type').value = mod.type.toUpperCase();
+            document.getElementById('prop-x').value = mod.x;
+            document.getElementById('prop-y').value = mod.y;
+
+            // Validation warnings
+            const warnEl = document.getElementById('validation-warnings');
+            const warnings = [];
+            // Check for unconnected power pins
+            const powerPins = mod.pins.filter(p => p.name === 'VCC' || p.name === '3.3V' || p.name === '5V');
+            const gndPins = mod.pins.filter(p => p.name === 'GND');
+            const hasVccWire = state.wires.some(w =>
+                (w.fromModule === mod.id && (w.fromPin === 'VCC' || w.fromPin === '3.3V' || w.fromPin === '5V')) ||
+                (w.toModule === mod.id && (w.toPin === 'VCC' || w.toPin === '3.3V' || w.toPin === '5V'))
+            );
+            const hasGndWire = state.wires.some(w =>
+                (w.fromModule === mod.id && w.fromPin === 'GND') ||
+                (w.toModule === mod.id && w.toPin === 'GND')
+            );
+            if ((powerPins.length > 0 && !hasVccWire) || (gndPins.length > 0 && !hasGndWire)) {
+                warnings.push('电源/地线未连接');
+            }
+
+            warnEl.innerHTML = warnings.map(w => `<div class="validation-warn">${w}</div>`).join('');
+
+            // Pins
+            const pinsList = document.getElementById('prop-pins-list');
+            pinsList.innerHTML = mod.pins.map(pin => `
+                <div class="property-pin">
+                    <div class="property-pin-indicator ${pin.type}"></div>
+                    <div class="property-pin-name">${pin.name}</div>
+                    <div class="property-pin-status">${pin.connected ? '●' : '○'}</div>
+                </div>
+            `).join('');
+
+            // Connections
+            const connEl = document.getElementById('prop-connections');
+            const conns = state.wires.filter(w => w.fromModule === mod.id || w.toModule === mod.id);
+            if (conns.length === 0) {
+                connEl.textContent = '无连接';
+            } else {
+                connEl.innerHTML = conns.map(w => {
+                    const other = w.fromModule === mod.id
+                        ? state.modules.find(m => m.id === w.toModule)
+                        : state.modules.find(m => m.id === w.fromModule);
+                    const pin = w.fromModule === mod.id ? w.fromPin : w.toPin;
+                    const otherPin = w.fromModule === mod.id ? w.toPin : w.fromPin;
+                    return `<div style="margin-bottom:3px;"><span style="color:var(--wire);">${pin}</span> → <span style="color:var(--text);">${other?.name || '?'}</span>.<span style="color:var(--wire);">${otherPin}</span></div>`;
+                }).join('');
+            }
+        }
+
+        // Property input handlers
+        document.getElementById('prop-name').addEventListener('change', (e) => {
+            if (state.selectedModule) {
+                state.selectedModule.name = e.target.value;
+                const header = document.getElementById(state.selectedModule.id)?.querySelector('.module-header');
+                if (header) header.textContent = e.target.value;
+                saveSnapshot();
+            }
+        });
+
+        document.getElementById('prop-x').addEventListener('change', (e) => {
+            if (state.selectedModule) {
+                state.selectedModule.x = parseInt(e.target.value) || 0;
+                const el = document.getElementById(state.selectedModule.id);
+                if (el) el.style.left = `${state.selectedModule.x}px`;
+                updateAllWires();
+                saveSnapshot();
+            }
+        });
+
+        document.getElementById('prop-y').addEventListener('change', (e) => {
+            if (state.selectedModule) {
+                state.selectedModule.y = parseInt(e.target.value) || 0;
+                const el = document.getElementById(state.selectedModule.id);
+                if (el) el.style.top = `${state.selectedModule.y}px`;
+                updateAllWires();
+                saveSnapshot();
+            }
+        });
+
+        // ─── Export ───
+        function openExportModal() {
+            exportModal.classList.add('active');
+            updateExportCode();
+        }
+
+        document.querySelectorAll('.modal-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                updateExportCode();
+            });
+        });
+
+        function updateExportCode() {
+            const activeTab = document.querySelector('.modal-tab.active').dataset.tab;
+            const codeEl = document.getElementById('export-code');
+            const generators = { html: generateHTMLExport, mermaid: generateMermaidExport, json: generateJSONExport, markdown: generateMarkdownExport };
+            codeEl.value = (generators[activeTab] || generateJSONExport)();
+        }
+
+        function generateHTMLExport() {
+            const mcu = state.modules.find(m => m.type === 'mcu');
+            const inputs = state.modules.filter(m => m.type === 'input');
+            const outputs = state.modules.filter(m => m.type === 'output');
+            const interfaces = state.modules.filter(m => m.type === 'interface');
+            const title = mcu ? `${mcu.name} 接线图` : '接线图';
+
+            let modulesHtml = '';
+            state.modules.forEach(mod => {
+                const typeClass = mod.type;
+                modulesHtml += `
+        <div class="module ${typeClass}">
+            <div class="module-name">${mod.name}</div>
+            <div class="pins">
+${mod.pins.map(p => `                <div class="pin ${p.type}">${p.name} ${p.value ? `(${p.value})` : ''}</div>`).join('\n')}
+            </div>
+        </div>`;
+            });
+
+            let connHtml = '';
+            state.wires.forEach(w => {
+                const from = state.modules.find(m => m.id === w.fromModule);
+                const to = state.modules.find(m => m.id === w.toModule);
+                if (from && to) {
+                    connHtml += `
+        <div class="connection">${from.name} ${w.fromPin} → ${to.name} ${w.toPin}</div>`;
+                }
+            });
+
+            return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Consolas, monospace; background: #1a1a2e; color: #eee; padding: 24px; }
+        h1 { text-align: center; margin-bottom: 24px; font-size: 20px; }
+        .diagram { display: flex; justify-content: center; align-items: flex-start; gap: 32px; flex-wrap: wrap; margin-bottom: 32px; }
+        .module { background: #16213e; border: 2px solid #30363d; border-radius: 8px; min-width: 140px; }
+        .module-name { padding: 8px 12px; font-weight: 600; font-size: 12px; text-align: center; border-radius: 6px 6px 0 0; }
+        .input .module-name { background: #e94560; }
+        .output .module-name { background: #4ecca3; color: #1a1a2e; }
+        .interface .module-name { background: #7c3aed; }
+        .mcu .module-name { background: #f9d71c; color: #1a1a2e; }
+        .mcu { border-color: #f9d71c; }
+        .pins { padding: 8px 12px; }
+        .pin { padding: 4px 0; font-size: 11px; color: #8b949e; }
+        .connections { background: #16213e; border-radius: 8px; padding: 16px; }
+        .connections h3 { color: #4ecca3; margin-bottom: 12px; font-size: 14px; }
+        .connection { padding: 6px 8px; margin: 4px 0; background: #0f3460; border-radius: 4px; font-size: 12px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>${title}</h1>
+    <div class="diagram">${modulesHtml}
+    </div>
+    <div class="connections">
+        <h3>接线说明</h3>${connHtml}
+    </div>
+</body>
+</html>`;
+        }
+
+        function generateMermaidExport() {
+            let mermaid = 'graph TB\n';
+            state.modules.forEach(m => {
+                mermaid += `    ${m.id}["${m.name}"]\n`;
+            });
+            mermaid += '\n';
+            state.wires.forEach(w => {
+                mermaid += `    ${w.fromModule} -->|"${w.fromPin}→${w.toPin}"| ${w.toModule}\n`;
+            });
+            return mermaid;
+        }
+
+        function generateJSONExport() {
+            return JSON.stringify({
+                modules: state.modules.map(m => ({
+                    id: m.id, name: m.name, type: m.type, x: m.x, y: m.y, pins: m.pins,
+                })),
+                wires: state.wires.map(w => ({
+                    from: { module: w.fromModule, pin: w.fromPin },
+                    to: { module: w.toModule, pin: w.toPin },
+                })),
+            }, null, 2);
+        }
+
+        function generateMarkdownExport() {
+            let md = '# 接线表\n\n';
+            md += '| 模块 | 引脚 | 连接到 | 说明 |\n';
+            md += '|------|------|--------|------|\n';
+            state.wires.forEach(w => {
+                const from = state.modules.find(m => m.id === w.fromModule);
+                const to = state.modules.find(m => m.id === w.toModule);
+                if (from && to) {
+                    md += `| ${from.name} | ${w.fromPin} | ${to.name} ${w.toPin} | |\n`;
+                }
+            });
+            return md;
+        }
+
+        document.getElementById('btn-copy').addEventListener('click', () => {
+            const code = document.getElementById('export-code');
+            navigator.clipboard.writeText(code.value);
+            showToast('已复制到剪贴板', 'success');
+        });
+
+        document.getElementById('btn-download').addEventListener('click', () => {
+            const activeTab = document.querySelector('.modal-tab.active').dataset.tab;
+            const code = document.getElementById('export-code').value;
+            const ext = { html: '.html', mermaid: '.mmd', json: '.json', markdown: '.md' };
+            const blob = new Blob([code], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'wiring-diagram' + (ext[activeTab] || '.txt');
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showToast('已下载', 'success');
+        });
+
+        // ─── Summary Panel ───
+        function updateSummary() {
+            const body = document.getElementById('summary-body');
+            if (state.wires.length === 0) {
+                body.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;">暂无连接</div>';
+                return;
+            }
+
+            let html = '';
+            state.wires.forEach(w => {
+                const from = state.modules.find(m => m.id === w.fromModule);
+                const to = state.modules.find(m => m.id === w.toModule);
+                if (!from || !to) return;
+
+                const isPower = n => n === 'VCC' || n === '3.3V' || n === '5V' || n === 'GND';
+                if (isPower(w.fromPin) || isPower(w.toPin)) {
+                    const pwr = w.fromPin === 'GND' || w.toPin === 'GND' ? 'GND' : 'VCC';
+                    html += `<div class="summary-item"><span class="from">${from.name}</span> <span class="pwr">${w.fromPin}</span> → <span class="to">${to.name}</span> <span class="pwr">${w.toPin}</span></div>`;
+                } else {
+                    html += `<div class="summary-item"><span class="from">${from.name}</span>.<span class="via">${w.fromPin}</span> → <span class="to">${to.name}</span>.<span class="via">${w.toPin}</span></div>`;
+                }
+            });
+            body.innerHTML = html;
+        }
+
+        // ─── Save/Load ───
+        function saveDiagram() {
+            const data = {
+                modules: state.modules.map(m => ({ ...m, pins: m.pins.map(p => ({ ...p })) })),
+                wires: state.wires.map(w => ({ ...w })),
+                nextId: state.idCounter,
+            };
+            localStorage.setItem('wiring-diagram', JSON.stringify(data));
+            showToast('已保存到本地存储', 'success');
+        }
+
+        function loadDiagram() {
+            if (state._hasPreset) return; // 有预填充数据时跳过加载
+            const saved = localStorage.getItem('wiring-diagram');
+            if (!saved) return;
+            try {
+                const data = JSON.parse(saved);
+                state.idCounter = data.nextId || 1;
+                document.querySelectorAll('.module-card').forEach(el => el.remove());
+                document.querySelectorAll('.wire').forEach(el => el.remove());
+                document.querySelectorAll('.wire-label').forEach(el => el.remove());
+                state.modules = [];
+                state.wires = [];
+
+                data.modules.forEach(m => {
+                    state.modules.push(m);
+                    renderModule(m);
+                });
+                data.wires.forEach(w => {
+                    state.wires.push(w);
+                    renderWire(w);
+                    updatePinConnected(w.fromModule, w.fromPin, true);
+                    updatePinConnected(w.toModule, w.toPin, true);
+                });
+                saveSnapshot();
+            } catch (e) {
+                console.error('Failed to load diagram:', e);
+            }
+        }
+
+        function newDiagram() {
+            if (state.modules.length > 0 && !confirm('确定要新建？当前未保存的更改将丢失。')) return;
+            document.querySelectorAll('.module-card').forEach(el => el.remove());
+            document.querySelectorAll('.wire').forEach(el => el.remove());
+            document.querySelectorAll('.wire-label').forEach(el => el.remove());
+            state.modules = [];
+            state.wires = [];
+            state.selectedModule = null;
+            state.selectedWire = null;
+            state.idCounter = 1;
+            state.history = [];
+            state.historyIndex = -1;
+            updatePropertiesPanel();
+            updateUndoRedoButtons();
+            localStorage.removeItem('wiring-diagram');
+        }
+
+        // ─── Button Handlers ───
+        document.getElementById('btn-undo').addEventListener('click', undo);
+        document.getElementById('btn-redo').addEventListener('click', redo);
+        document.getElementById('btn-new').addEventListener('click', newDiagram);
+        document.getElementById('btn-save').addEventListener('click', saveDiagram);
+        document.getElementById('btn-export').addEventListener('click', openExportModal);
+        document.getElementById('modal-close').addEventListener('click', () => exportModal.classList.remove('active'));
+        document.getElementById('btn-summary').addEventListener('click', () => {
+            summaryPanel.classList.toggle('active');
+            if (summaryPanel.classList.contains('active')) updateSummary();
+        });
+        document.getElementById('summary-close').addEventListener('click', () => summaryPanel.classList.remove('active'));
+        document.getElementById('btn-clear-wires').addEventListener('click', () => {
+            if (state.wires.length === 0) return;
+            if (!confirm('确定清除所有连线？')) return;
+            state.wires.forEach(w => {
+                const el = document.getElementById(w.id);
+                if (el) el.remove();
+                const label = document.querySelector(`.wire-label[data-wire="${w.id}"]`);
+                if (label) label.remove();
+            });
+            state.wires = [];
+            state.modules.forEach(m => m.pins.forEach(p => p.connected = false));
+            document.querySelectorAll('.pin-indicator.connected').forEach(el => el.classList.remove('connected'));
+            saveSnapshot();
+            showToast('已清除所有连线', 'success');
+        });
+
+        // Theme toggle — cycles: auto → dark → light → auto
+        function getEffectiveTheme() {
+            const attr = document.documentElement.getAttribute('data-theme');
+            if (attr) return attr;
+            return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+
+        function toggleTheme() {
+            const current = getEffectiveTheme();
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            document.getElementById('btn-theme').textContent = next === 'dark' ? '🌙' : '☀️';
+            localStorage.setItem('wiring-theme', next);
+            updateAllWires();
+        }
+
+        (function loadTheme() {
+            const saved = localStorage.getItem('wiring-theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+                document.getElementById('btn-theme').textContent = saved === 'dark' ? '🌙' : '☀️';
+            } else {
+                const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+                document.getElementById('btn-theme').textContent = sysLight ? '☀️' : '🌙';
+            }
+        })();
+
+        document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+
+        // ─── Keyboard Shortcuts ───
+        function isInputFocused() {
+            const tag = document.activeElement.tagName;
+            return tag === 'INPUT' || tag === 'TEXTAREA';
+        }
+
+        const keyHandlers = {
+            'Escape': () => {
+                if (state.wireMode) cancelWireMode();
+                else if (state.selectedWire) { state.selectedWire = null; document.querySelectorAll('.wire').forEach(el => el.classList.remove('selected')); }
+                else if (exportModal.classList.contains('active')) exportModal.classList.remove('active');
+                else if (summaryPanel.classList.contains('active')) summaryPanel.classList.remove('active');
+            },
+            'Delete': () => { if (!isInputFocused()) { if (state.selectedWire) deleteSelectedWire(); else if (state.selectedModule) deleteModule(state.selectedModule.id); } },
+            'Backspace': () => { if (!isInputFocused()) { if (state.selectedWire) deleteSelectedWire(); else if (state.selectedModule) deleteModule(state.selectedModule.id); } },
+            'f': () => { if (!isInputFocused() && state.selectedModule) flipModule(state.selectedModule.id); },
+            'r': (e) => {
+                if (isInputFocused()) return;
+                if (state.selectedWire) {
+                    // R 切换起点引出方向，Shift+R 切换终点引出方向
+                    if (e.shiftKey) { state.selectedWire.dirTo = !state.selectedWire.dirTo; }
+                    else { state.selectedWire.dirFrom = !state.selectedWire.dirFrom; }
+                    updateWirePath(state.selectedWire);
+                    updatePropertiesPanel();
+                    saveSnapshot();
+                } else if (state.selectedModule) {
+                    // R 切换该模块所有连线的引出方向
+                    const modId = state.selectedModule.id;
+                    state.wires.forEach(w => {
+                        if (w.fromModule === modId) w.dirFrom = !w.dirFrom;
+                        if (w.toModule === modId) w.dirTo = !w.dirTo;
+                    });
+                    updateAllWires();
+                    saveSnapshot();
+                }
+            },
+            'R': (e) => {
+                if (isInputFocused()) return;
+                if (state.selectedWire) {
+                    state.selectedWire.dirTo = !state.selectedWire.dirTo;
+                    updateWirePath(state.selectedWire);
+                    updatePropertiesPanel();
+                    saveSnapshot();
+                } else if (state.selectedModule) {
+                    // Shift+R 切换该模块所有连线的引出方向
+                    const modId = state.selectedModule.id;
+                    state.wires.forEach(w => {
+                        if (w.fromModule === modId) w.dirFrom = !w.dirFrom;
+                        if (w.toModule === modId) w.dirTo = !w.dirTo;
+                    });
+                    updateAllWires();
+                    saveSnapshot();
+                }
+            },
+        };
+
+        const ctrlKeyHandlers = {
+            'z': undo,
+            'y': redo,
+            's': saveDiagram,
+            'e': openExportModal,
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && ctrlKeyHandlers[e.key]) {
+                e.preventDefault();
+                ctrlKeyHandlers[e.key]();
+                return;
+            }
+            if (keyHandlers[e.key]) keyHandlers[e.key](e);
+        });
+
+        // Click canvas background to deselect
+        canvas.addEventListener('click', (e) => {
+            if (e.target === canvas || e.target === canvasSvg) {
+                document.querySelectorAll('.module-card').forEach(el => el.classList.remove('selected'));
+                document.querySelectorAll('.wire').forEach(el => el.classList.remove('selected'));
+                state.selectedModule = null;
+                state.selectedWire = null;
+                updatePropertiesPanel();
+            }
+        });
+
+        // ─── Zoom & Pan ───
+        const canvasContainer = document.getElementById('canvas-container');
+        const zoomLevelEl = document.getElementById('zoom-level');
+
+        function applyTransform() {
+            canvas.style.transform = `scale(${state.zoom}) translate(${state.panX}px, ${state.panY}px)`;
+            zoomLevelEl.textContent = Math.round(state.zoom * 100) + '%';
+        }
+
+        function zoomTo(newZoom, centerX, centerY) {
+            const oldZoom = state.zoom;
+            newZoom = Math.max(0.2, Math.min(3, newZoom));
+            // 以鼠标位置为中心缩放
+            if (centerX !== undefined) {
+                const containerRect = canvasContainer.getBoundingClientRect();
+                const cx = centerX - containerRect.left;
+                const cy = centerY - containerRect.top;
+                state.panX = cx / newZoom - (cx / oldZoom - state.panX);
+                state.panY = cy / newZoom - (cy / oldZoom - state.panY);
+            }
+            state.zoom = newZoom;
+            applyTransform();
+            updateAllWires();
+        }
+
+        // 滚轮缩放
+        canvasContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            zoomTo(state.zoom + delta, e.clientX, e.clientY);
+        }, { passive: false });
+
+        // 画布拖拽（中键 或 Space+左键）
+        let spaceHeld = false;
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.repeat) {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+                e.preventDefault();
+                spaceHeld = true;
+                canvas.style.cursor = 'grab';
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                spaceHeld = false;
+                canvas.style.cursor = '';
+            }
+        });
+
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (e.button === 1 || (e.button === 0 && spaceHeld)) {
+                e.preventDefault();
+                state.isPanning = true;
+                state.panStart = { x: e.clientX, y: e.clientY };
+                canvas.classList.add('panning');
+            }
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!state.isPanning) return;
+            const dx = (e.clientX - state.panStart.x) / state.zoom;
+            const dy = (e.clientY - state.panStart.y) / state.zoom;
+            state.panX += dx;
+            state.panY += dy;
+            state.panStart = { x: e.clientX, y: e.clientY };
+            applyTransform();
+            updateAllWires();
+        });
+        document.addEventListener('mouseup', () => {
+            if (state.isPanning) {
+                state.isPanning = false;
+                canvas.classList.remove('panning');
+            }
+        });
+
+        // 工具栏缩放按钮
+        document.getElementById('btn-zoom-in').addEventListener('click', () => zoomTo(state.zoom + 0.1));
+        document.getElementById('btn-zoom-out').addEventListener('click', () => zoomTo(state.zoom - 0.1));
+        document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+            state.zoom = 1; state.panX = 0; state.panY = 0;
+            applyTransform();
+            updateAllWires();
+        });
+
+        // 连线属性按钮
+        document.getElementById('btn-wire-reverse-from').addEventListener('click', () => {
+            if (!state.selectedWire) return;
+            state.selectedWire.dirFrom = !state.selectedWire.dirFrom;
+            updateWirePath(state.selectedWire);
+            updatePropertiesPanel();
+            saveSnapshot();
+        });
+        document.getElementById('btn-wire-reverse-to').addEventListener('click', () => {
+            if (!state.selectedWire) return;
+            state.selectedWire.dirTo = !state.selectedWire.dirTo;
+            updateWirePath(state.selectedWire);
+            updatePropertiesPanel();
+            saveSnapshot();
+        });
+        document.getElementById('btn-wire-delete').addEventListener('click', () => {
+            deleteSelectedWire();
+        });
+
+        // 拖拽模块时需要考虑缩放
+        startDrag = function(e, mod) {
+            state.dragOffset = { x: e.clientX / state.zoom - mod.x - state.panX, y: e.clientY / state.zoom - mod.y - state.panY };
+            selectModule(mod.id);
+            state.dragModule = mod;
+            const onMove = (ev) => {
+                if (!state.dragModule) return;
+                state.dragModule.x = ev.clientX / state.zoom - state.dragOffset.x - state.panX;
+                state.dragModule.y = ev.clientY / state.zoom - state.dragOffset.y - state.panY;
+                const el = document.getElementById(state.dragModule.id);
+                if (el) { el.style.left = state.dragModule.x + 'px'; el.style.top = state.dragModule.y + 'px'; }
+                updateAllWires();
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                state.dragModule = null;
+                saveSnapshot();
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        };
+
+
+    // === 预填充模块（由 diagram-agent 生成） ===
+    state._hasPreset = true;
+    (function() {
+      addModule('STM32F103', 'mcu', 300, 160);
+      var mcuModule = state.modules[state.modules.length - 1];
+
+      // 输入模块
+      
+      addModule('KEY', 'input', 40, 40);
+      (function(inputMod) {
+        setTimeout(function() {
+          
+          var sigPin = inputMod.pins.find(function(p) {
+            return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+          });
+          var mcuPin = 'PA0';
+          if (sigPin) {
+            addWire(inputMod.id, sigPin.name, mcuModule.id, mcuPin);
+            addWire(inputMod.id, 'VCC', mcuModule.id, '3.3V');
+            addWire(inputMod.id, 'GND', mcuModule.id, 'GND');
+          }
+          
+        }, 100);
+      })(state.modules[state.modules.length - 1]);
+    
+      addModule('TOUCH', 'input', 40, 200);
+      (function(inputMod) {
+        setTimeout(function() {
+          
+          var sigPin = inputMod.pins.find(function(p) {
+            return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+          });
+          var mcuPin = 'PA1';
+          if (sigPin) {
+            addWire(inputMod.id, sigPin.name, mcuModule.id, mcuPin);
+            addWire(inputMod.id, 'VCC', mcuModule.id, '3.3V');
+            addWire(inputMod.id, 'GND', mcuModule.id, 'GND');
+          }
+          
+        }, 150);
+      })(state.modules[state.modules.length - 1]);
+    
+      addModule('JOYSTICK', 'input', 40, 360);
+      (function(inputMod) {
+        setTimeout(function() {
+          
+          var sigPin = inputMod.pins.find(function(p) {
+            return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+          });
+          var mcuPin = 'PA2';
+          if (sigPin) {
+            addWire(inputMod.id, sigPin.name, mcuModule.id, mcuPin);
+            addWire(inputMod.id, 'VCC', mcuModule.id, '3.3V');
+            addWire(inputMod.id, 'GND', mcuModule.id, 'GND');
+          }
+          
+        }, 200);
+      })(state.modules[state.modules.length - 1]);
+    
+      addModule('MPU6050', 'input', 40, 520);
+      (function(inputMod) {
+        setTimeout(function() {
+          
+          var sigPin = inputMod.pins.find(function(p) {
+            return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+          });
+          var mcuPin = 'PA3';
+          if (sigPin) {
+            addWire(inputMod.id, sigPin.name, mcuModule.id, mcuPin);
+            addWire(inputMod.id, 'VCC', mcuModule.id, '3.3V');
+            addWire(inputMod.id, 'GND', mcuModule.id, 'GND');
+          }
+          
+        }, 250);
+      })(state.modules[state.modules.length - 1]);
+    
+      addModule('NRF24L01', 'input', 40, 680);
+      (function(inputMod) {
+        setTimeout(function() {
+          
+          var sigPin = inputMod.pins.find(function(p) {
+            return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+          });
+          var mcuPin = 'PA4';
+          if (sigPin) {
+            addWire(inputMod.id, sigPin.name, mcuModule.id, mcuPin);
+            addWire(inputMod.id, 'VCC', mcuModule.id, '3.3V');
+            addWire(inputMod.id, 'GND', mcuModule.id, 'GND');
+          }
+          
+        }, 300);
+      })(state.modules[state.modules.length - 1]);
+    
+
+      // 输出模块
+      
+        addModule('LCD', 'output', 580, 40);
+        (function(outputMod) {
+          setTimeout(function() {
+            var sigPin = outputMod.pins.find(function(p) {
+              return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+            }) || outputMod.pins.find(function(p) {
+              return p.name !== 'VCC' && p.name !== 'GND';
+            });
+            if (sigPin) {
+              addWire(outputMod.id, sigPin.name, mcuModule.id, 'PA5');
+              addWire(outputMod.id, 'VCC', mcuModule.id, '3.3V');
+              addWire(outputMod.id, 'GND', mcuModule.id, 'GND');
+            }
+          }, 200);
+        })(state.modules[state.modules.length - 1]);
+      
+        addModule('LED', 'output', 580, 200);
+        (function(outputMod) {
+          setTimeout(function() {
+            var sigPin = outputMod.pins.find(function(p) {
+              return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+            }) || outputMod.pins.find(function(p) {
+              return p.name !== 'VCC' && p.name !== 'GND';
+            });
+            if (sigPin) {
+              addWire(outputMod.id, sigPin.name, mcuModule.id, 'PA6');
+              addWire(outputMod.id, 'VCC', mcuModule.id, '3.3V');
+              addWire(outputMod.id, 'GND', mcuModule.id, 'GND');
+            }
+          }, 250);
+        })(state.modules[state.modules.length - 1]);
+      
+        addModule('Servo', 'output', 580, 360);
+        (function(outputMod) {
+          setTimeout(function() {
+            var sigPin = outputMod.pins.find(function(p) {
+              return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+            }) || outputMod.pins.find(function(p) {
+              return p.name !== 'VCC' && p.name !== 'GND';
+            });
+            if (sigPin) {
+              addWire(outputMod.id, sigPin.name, mcuModule.id, 'PA7');
+              addWire(outputMod.id, 'VCC', mcuModule.id, '3.3V');
+              addWire(outputMod.id, 'GND', mcuModule.id, 'GND');
+            }
+          }, 300);
+        })(state.modules[state.modules.length - 1]);
+      
+        addModule('Relay', 'output', 580, 520);
+        (function(outputMod) {
+          setTimeout(function() {
+            var sigPin = outputMod.pins.find(function(p) {
+              return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+            }) || outputMod.pins.find(function(p) {
+              return p.name !== 'VCC' && p.name !== 'GND';
+            });
+            if (sigPin) {
+              addWire(outputMod.id, sigPin.name, mcuModule.id, 'PA8');
+              addWire(outputMod.id, 'VCC', mcuModule.id, '3.3V');
+              addWire(outputMod.id, 'GND', mcuModule.id, 'GND');
+            }
+          }, 350);
+        })(state.modules[state.modules.length - 1]);
+      
+        addModule('L9110_MOTOR', 'output', 580, 680);
+        (function(outputMod) {
+          setTimeout(function() {
+            var sigPin = outputMod.pins.find(function(p) {
+              return p.type !== 'input' && p.name !== 'VCC' && p.name !== 'GND';
+            }) || outputMod.pins.find(function(p) {
+              return p.name !== 'VCC' && p.name !== 'GND';
+            });
+            if (sigPin) {
+              addWire(outputMod.id, sigPin.name, mcuModule.id, 'PA9');
+              addWire(outputMod.id, 'VCC', mcuModule.id, '3.3V');
+              addWire(outputMod.id, 'GND', mcuModule.id, 'GND');
+            }
+          }, 400);
+        })(state.modules[state.modules.length - 1]);
+      
+
+      // 更新标题
+      document.querySelector('.toolbar-title').textContent = 'STM32F103ZET6 状态机控制系统 v2.0.0 接线图编辑器';
+      if (typeof saveSnapshot === 'function') saveSnapshot();
+    })();
+  
+        // ─── Init ───
+        loadDiagram();
+        saveSnapshot();
+
+    })();
+    </script>
+</body>
+</html>
